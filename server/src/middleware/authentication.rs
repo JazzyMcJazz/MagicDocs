@@ -4,14 +4,19 @@ use std::{
 };
 
 use actix_web::{
+    cookie::{self, Cookie},
     dev::{forward_ready, ConnectionInfo, Service, ServiceRequest, ServiceResponse, Transform},
-    http::{StatusCode, Uri},
+    http::{header, StatusCode, Uri},
     web, Error, HttpMessage, HttpResponse, ResponseError,
 };
 use futures_util::future::LocalBoxFuture;
 use tera::Context;
 
-use crate::{server::AppState, utils::extractor::Extractor};
+use crate::{
+    keycloak::{GrantType, TokenResponse},
+    server::AppState,
+    utils::extractor::Extractor,
+};
 
 pub struct Authentication;
 
@@ -59,6 +64,7 @@ where
             return Box::pin(async move {
                 Err(AuthenticationError {
                     status: StatusCode::INTERNAL_SERVER_ERROR,
+                    token_response: None,
                     conn_info,
                     app_data,
                     uri,
@@ -72,53 +78,90 @@ where
             let fut = self.service.call(req);
 
             return Box::pin(async move {
-                match app_data
+                let Ok(token) = app_data
                     .keycloak
-                    .exchange_code(&code.clone(), &redirect_uri)
+                    .exchange_token(GrantType::AuthorizationCode(code.clone()), &redirect_uri)
                     .await
-                {
-                    Ok(token) => {
-                        dbg!(token);
-                        fut.await
-                    }
-                    Err(e) => {
-                        dbg!(e);
-                        Err(AuthenticationError {
-                            status: StatusCode::UNAUTHORIZED,
-                            app_data: Some(app_data),
-                            conn_info,
-                            uri,
-                        }
-                        .into())
-                    }
-                }
-            });
-        } else {
-            let Some(_) = req.cookie("id") else {
-                let b = Box::pin(async move {
-                    Err(AuthenticationError {
+                else {
+                    return Err(AuthenticationError {
                         status: StatusCode::UNAUTHORIZED,
+                        app_data: Some(app_data),
+                        token_response: None,
+                        conn_info,
+                        uri,
+                    }
+                    .into());
+                };
+
+                match Some(()) {
+                    // This is a hack to make the code compile
+                    Some(_) => Err(AuthenticationError {
+                        status: StatusCode::FOUND,
+                        token_response: Some(token),
                         app_data: Some(app_data),
                         conn_info,
                         uri,
                     }
-                    .into())
-                });
-                return b;
-            };
+                    .into()),
+                    None => fut.await,
+                }
+            });
         }
 
-        // Add the next path to the context (if it exists)
-        // req.query_string().split('&').for_each(|q| {
-        //     if q.contains("next=") {
-        //         context.insert("next", q.split('=').last().unwrap_or("/"));
-        //     }
-        // });
+        // Check if the user has a valid tokens or try to refresh the tokens
+        let (Some(_), Some(access_token)) = (req.cookie("id"), req.cookie("ac")) else {
+            if let Some(refresh_token) = req.cookie("rf") {
+                let fut = self.service.call(req);
+
+                return Box::pin(async move {
+                    let Ok(token) = app_data
+                        .keycloak
+                        .exchange_token(
+                            GrantType::RefreshToken(refresh_token.value().to_owned()),
+                            &redirect_uri,
+                        )
+                        .await
+                    else {
+                        return Err(AuthenticationError {
+                            status: StatusCode::UNAUTHORIZED,
+                            app_data: Some(app_data),
+                            token_response: None,
+                            conn_info,
+                            uri,
+                        }
+                        .into());
+                    };
+
+                    match Some(()) {
+                        // This is a hack to make the code compile
+                        Some(_) => Err(AuthenticationError {
+                            status: StatusCode::FOUND,
+                            token_response: Some(token),
+                            app_data: Some(app_data),
+                            conn_info,
+                            uri,
+                        }
+                        .into()),
+                        None => fut.await,
+                    }
+                });
+            }
+
+            return Box::pin(async move {
+                Err(AuthenticationError {
+                    status: StatusCode::UNAUTHORIZED,
+                    app_data: Some(app_data),
+                    token_response: None,
+                    conn_info,
+                    uri,
+                }
+                .into())
+            });
+        };
 
         // Add the current path to the context
         let mut context = Context::new();
         context.insert("path", req.path());
-        context.insert("next", "/");
 
         // Add the context to the request extensions
         if req.method() == "GET" {
@@ -126,7 +169,19 @@ where
         }
 
         let fut = self.service.call(req);
-        Box::pin(fut)
+        Box::pin(async move {
+            match app_data.keycloak.validate_token(access_token.value()).await {
+                Ok(_) => fut.await,
+                Err(_) => Err(AuthenticationError {
+                    status: StatusCode::UNAUTHORIZED,
+                    app_data: Some(app_data),
+                    token_response: None,
+                    conn_info,
+                    uri,
+                }
+                .into()),
+            }
+        })
     }
 }
 
@@ -136,6 +191,7 @@ pub struct AuthenticationError {
     conn_info: ConnectionInfo,
     status: StatusCode,
     uri: Uri,
+    token_response: Option<TokenResponse>,
 }
 
 impl fmt::Display for AuthenticationError {
@@ -148,6 +204,7 @@ impl ResponseError for AuthenticationError {
     fn error_response(&self) -> HttpResponse {
         match self.status {
             StatusCode::UNAUTHORIZED => self.unauthorized_response(),
+            StatusCode::FOUND => self.found_response(),
             _ => self.internal_server_error_response(),
         }
     }
@@ -158,6 +215,24 @@ impl ResponseError for AuthenticationError {
 }
 
 impl AuthenticationError {
+    fn found_response(&self) -> HttpResponse {
+        let Some(tokens) = self.token_response.clone() else {
+            return HttpResponse::InternalServerError().finish();
+        };
+
+        let Ok((id_cookie, access_cookie, refresh_cookie)) = CookieUtils::build_cookies(&tokens)
+        else {
+            return HttpResponse::InternalServerError().finish();
+        };
+
+        HttpResponse::Found()
+            .cookie(id_cookie)
+            .cookie(access_cookie)
+            .cookie(refresh_cookie)
+            .insert_header((header::LOCATION, self.uri.path()))
+            .finish()
+    }
+
     fn unauthorized_response(&self) -> HttpResponse {
         let Some(data) = &self.app_data else {
             return HttpResponse::InternalServerError().finish();
@@ -175,5 +250,43 @@ impl AuthenticationError {
 
     fn internal_server_error_response(&self) -> HttpResponse {
         HttpResponse::InternalServerError().finish()
+    }
+}
+
+struct CookieUtils;
+
+impl CookieUtils {
+    // Helper function
+    fn build_cookies(
+        token_response: &'_ TokenResponse,
+    ) -> Result<(Cookie<'_>, Cookie<'_>, Cookie<'_>), Box<dyn std::error::Error>> {
+        let now = cookie::time::OffsetDateTime::now_utc().unix_timestamp();
+        let expires =
+            cookie::time::OffsetDateTime::from_unix_timestamp(now + token_response.expires_in())?;
+        let rf_expires =
+            cookie::time::OffsetDateTime::from_unix_timestamp(now + 60 * 60 * 24 * 180)?; // 180 days
+
+        let id_cookie = Cookie::build("id", token_response.id_token())
+            .path("/")
+            .secure(true)
+            .http_only(true)
+            .expires(expires)
+            .finish();
+
+        let access_cookie = Cookie::build("ac", token_response.access_token())
+            .path("/")
+            .secure(true)
+            .http_only(true)
+            .expires(expires)
+            .finish();
+
+        let refresh_cookie = Cookie::build("rf", token_response.refresh_token())
+            .path("/")
+            .secure(true)
+            .http_only(true)
+            .expires(rf_expires)
+            .finish();
+
+        Ok((id_cookie, access_cookie, refresh_cookie))
     }
 }

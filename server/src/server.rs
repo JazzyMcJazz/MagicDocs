@@ -63,4 +63,5 @@ pub async fn run() -> std::io::Result<()> {
 
 fn init(cfg: &mut web::ServiceConfig) {
     cfg.route("/", web::get().to(routes::index));
+    cfg.route("/logout", web::get().to(routes::logout));
 }

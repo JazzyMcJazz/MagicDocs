@@ -1,10 +1,24 @@
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct TokenResponse {
     access_token: String,
     refresh_token: String,
     id_token: String,
-    token_type: String,
-    expires_in: u32,
+    expires_in: i64,
+}
+
+impl TokenResponse {
+    pub fn access_token(&self) -> &str {
+        &self.access_token
+    }
+    pub fn refresh_token(&self) -> &str {
+        &self.refresh_token
+    }
+    pub fn id_token(&self) -> &str {
+        &self.id_token
+    }
+    pub fn expires_in(&self) -> i64 {
+        self.expires_in
+    }
 }

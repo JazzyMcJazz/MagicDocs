@@ -1,0 +1,7 @@
+target/
+migration/README.md
+Dockerfile
+.env
+.env.example
+.gitignore
+manage.sh
