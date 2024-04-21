@@ -9,8 +9,8 @@
   "refreshTokenMaxReuse": 0,
   "accessTokenLifespan": 300,
   "accessTokenLifespanForImplicitFlow": 900,
-  "ssoSessionIdleTimeout": 1800,
-  "ssoSessionMaxLifespan": 36000,
+  "ssoSessionIdleTimeout": 15552000,
+  "ssoSessionMaxLifespan": 15552000,
   "ssoSessionIdleTimeoutRememberMe": 0,
   "ssoSessionMaxLifespanRememberMe": 0,
   "offlineSessionIdleTimeout": 2592000,
@@ -688,7 +688,7 @@
       "protocol": "openid-connect",
       "attributes": {
         "oidc.ciba.grant.enabled": "false",
-        "client.secret.creation.time": "1713478383",
+        "client.secret.creation.time": "1713622821",
         "backchannel.logout.session.required": "true",
         "token.endpoint.auth.signing.alg": "RS256",
         "display.on.consent.screen": "false",
@@ -1403,14 +1403,14 @@
         "subComponents": {},
         "config": {
           "allowed-protocol-mapper-types": [
-            "saml-user-property-mapper",
-            "oidc-usermodel-property-mapper",
-            "oidc-usermodel-attribute-mapper",
-            "saml-user-attribute-mapper",
-            "oidc-address-mapper",
             "oidc-sha256-pairwise-sub-mapper",
+            "oidc-usermodel-property-mapper",
+            "saml-user-attribute-mapper",
             "oidc-full-name-mapper",
-            "saml-role-list-mapper"
+            "oidc-address-mapper",
+            "saml-role-list-mapper",
+            "saml-user-property-mapper",
+            "oidc-usermodel-attribute-mapper"
           ]
         }
       },
@@ -1437,11 +1437,11 @@
         "subComponents": {},
         "config": {
           "allowed-protocol-mapper-types": [
+            "saml-user-attribute-mapper",
+            "saml-user-property-mapper",
+            "oidc-address-mapper",
             "oidc-usermodel-property-mapper",
             "oidc-usermodel-attribute-mapper",
-            "saml-user-property-mapper",
-            "saml-user-attribute-mapper",
-            "oidc-address-mapper",
             "oidc-full-name-mapper",
             "saml-role-list-mapper",
             "oidc-sha256-pairwise-sub-mapper"
@@ -1503,13 +1503,25 @@
     ],
     "org.keycloak.keys.KeyProvider": [
       {
-        "id": "fe384db0-11e3-4463-9ece-7265140a1465",
+        "id": "3f8814b8-fade-4f7d-ac30-40e022481185",
         "name": "rsa-generated",
         "providerId": "rsa-generated",
         "subComponents": {},
         "config": {
+          "keySize": [
+            "2048"
+          ],
+          "active": [
+            "true"
+          ],
           "priority": [
-            "100"
+            "0"
+          ],
+          "enabled": [
+            "true"
+          ],
+          "algorithm": [
+            "RS256"
           ]
         }
       },
