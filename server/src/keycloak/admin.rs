@@ -6,7 +6,7 @@ use tokio::sync::Mutex;
 
 use crate::utils::claims::Claims;
 
-use super::{cache::Jwks, GrantType, JwksCache};
+use super::{jwk::Jwks, GrantType, JwksCache};
 
 pub struct Keycloak {
     // admin: Arc<Mutex<KeycloakAdmin>>,
@@ -82,15 +82,26 @@ impl Keycloak {
     }
 
     pub async fn validate_token(&self, token: &str) -> Result<Claims, Box<dyn std::error::Error>> {
-        let jwks = self.get_jwks().await?;
-        for jwk in jwks.get_keys() {
-            match jwk.validate(token) {
-                Ok(result) => return Ok(result),
-                Err(_) => continue,
-            }
-        }
+        let mut jwks = self.get_jwks().await?;
+        dbg!(&jwks);
 
-        Err("".into())
+        let jwk = match jwks.match_kid(token) {
+            Some(jwk) => jwk,
+            None => {
+                // If the token is not found in the JWKS, fetch the JWKS again and try to find the token
+                jwks = self.fetch_jwks().await?;
+                let jwk = jwks.match_kid(token).ok_or("No matching JWK found")?;
+
+                // Update the cache with the new JWKS if a matching JWK is found
+                self.jwk_cache
+                    .lock()
+                    .await
+                    .put("c", JwksCache::from(jwks.clone()));
+                jwk
+            }
+        };
+
+        jwk.validate(token)
     }
 
     pub fn login_url(&self, redirect_uri: &str) -> String {

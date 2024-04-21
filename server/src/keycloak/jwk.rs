@@ -5,6 +5,19 @@ use std::str::FromStr;
 use crate::utils::claims::Claims;
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct Jwks {
+    keys: Vec<Jwk>,
+}
+
+impl Jwks {
+    pub fn match_kid(&self, token: &str) -> Option<&Jwk> {
+        let header = jsonwebtoken::decode_header(token).ok()?;
+        let kid = header.kid?;
+        self.keys.iter().find(|key| key.kid == kid)
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
 #[allow(dead_code)]
 pub struct Jwk {
     kid: String,

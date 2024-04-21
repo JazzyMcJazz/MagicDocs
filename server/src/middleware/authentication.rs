@@ -168,7 +168,10 @@ where
             req.extensions_mut().insert(context);
         }
 
+        // The service call is not executed until the token is validated (at `fut.await`)
         let fut = self.service.call(req);
+
+        // Validate the access token and execute the service call
         Box::pin(async move {
             match app_data.keycloak.validate_token(access_token.value()).await {
                 Ok(_) => fut.await,
@@ -261,8 +264,9 @@ impl CookieUtils {
         token_response: &'_ TokenResponse,
     ) -> Result<(Cookie<'_>, Cookie<'_>, Cookie<'_>), Box<dyn std::error::Error>> {
         let now = cookie::time::OffsetDateTime::now_utc().unix_timestamp();
-        let expires =
-            cookie::time::OffsetDateTime::from_unix_timestamp(now + token_response.expires_in())?;
+        let expires = cookie::time::OffsetDateTime::from_unix_timestamp(
+            now + token_response.expires_in() - 10,
+        )?; // 10 seconds before the token expires
         let rf_expires =
             cookie::time::OffsetDateTime::from_unix_timestamp(now + 60 * 60 * 24 * 180)?; // 180 days
 

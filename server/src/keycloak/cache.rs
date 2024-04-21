@@ -1,18 +1,5 @@
-use super::Jwk;
-use serde::Deserialize;
+use super::Jwks;
 use std::time::SystemTime;
-
-#[derive(Debug, Clone, Deserialize)]
-#[allow(dead_code)]
-pub struct Jwks {
-    keys: Vec<Jwk>,
-}
-
-impl Jwks {
-    pub fn get_keys(&self) -> &Vec<Jwk> {
-        &self.keys
-    }
-}
 
 #[derive(Debug)]
 pub struct JwksCache {
