@@ -31,8 +31,8 @@ function start() {
         -e POSTGRES_PASSWORD=$PG_PASS \
         -e KC_DB_USER=$KC_DB_USER \
         -e KC_DB_PASS=$KC_DB_PASS \
-        -e DB_DB_USER=$DB_DB_USER \
-        -e DB_DB_PASS=$DB_DB_PASS \
+        -e MD_DB_USER=$MD_DB_USER \
+        -e MD_DB_PASS=$MD_DB_PASS \
         --health-cmd='pg_isready -U postgres -d keycloak && pg_isready -U postgres -d magicdocs' \
         --health-start-period=10s \
         --health-start-interval=5s \
