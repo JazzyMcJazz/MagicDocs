@@ -34,7 +34,7 @@ function start() {
         -e KC_DB_URL_HOST=$KC_DB_URL_HOST \
         -e KC_DB_URL_PORT=$KC_DB_URL_PORT \
         -e KC_DB_URL_DATABASE=$KC_DB_URL_DATABASE \
-        keycloak:latest start-dev --import-realm
+        keycloak:latest start-dev --import-realm --health-enabled true
 }
 
 function stop() {

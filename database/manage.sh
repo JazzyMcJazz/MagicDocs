@@ -27,6 +27,7 @@ function start() {
     docker run -d --name magicdocs-db \
         -p 5432:5432 \
         --network=magicdocs-net \
+        --network-alias=db \
         -v magicdocs_db:/var/lib/postgresql/data \
         -e POSTGRES_PASSWORD=$PG_PASS \
         -e KC_DB_USER=$KC_DB_USER \

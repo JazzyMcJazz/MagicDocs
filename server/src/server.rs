@@ -1,6 +1,6 @@
 use std::{env, str::FromStr};
 
-use actix_web::{middleware::Logger, web, App, HttpServer};
+use actix_web::{middleware::Logger, web, App, HttpResponse, HttpServer};
 use migration::{
     sea_orm::{ConnectOptions, Database, DatabaseConnection},
     Migrator, MigratorTrait,
@@ -51,8 +51,16 @@ pub async fn run() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .app_data(web::Data::new(state.clone()))
-            .wrap(middleware::Authentication)
-            .configure(init)
+            .service(
+                web::scope("/health")
+                    .route("", web::head().to(HttpResponse::Ok))
+                    .route("", web::get().to(HttpResponse::Ok)),
+            )
+            .service(
+                web::scope("")
+                    .wrap(middleware::Authentication)
+                    .configure(init),
+            )
     });
 
     server = server.bind("0.0.0.0:3000")?;
