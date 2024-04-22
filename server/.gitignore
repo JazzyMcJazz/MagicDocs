@@ -1,1 +1,4 @@
 /target
+/migration/target
+tailwindcss-linux-x64
+/static/css/styles.css

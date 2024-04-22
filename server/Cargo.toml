@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 migration = { path = "./migration" }
+entity = { path = "./entity" }
 actix-web = "4.5.1"
 dotenvy = "0.15.7"
 env_logger = "0.11.3"
@@ -19,6 +20,7 @@ tokio = { version = "1.37.0", features = ["sync"] }
 futures-util = "0.3.30"
 lru = "0.12.3"
 jsonwebtoken = "9.3.0"
+actix-files = "0.6.5"
 
 [dev-dependencies]
 rstest = "0.19.0"

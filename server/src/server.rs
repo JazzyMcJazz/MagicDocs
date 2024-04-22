@@ -1,6 +1,7 @@
 use std::{env, str::FromStr};
 
-use actix_web::{middleware::Logger, web, App, HttpResponse, HttpServer};
+use actix_files as fs;
+use actix_web::{dev::ServiceRequest, middleware::Logger, web, App, HttpResponse, HttpServer};
 use migration::{
     sea_orm::{ConnectOptions, Database, DatabaseConnection},
     Migrator, MigratorTrait,
@@ -20,14 +21,16 @@ pub struct AppState {
 #[actix_web::main]
 pub async fn run() -> std::io::Result<()> {
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL in .env");
-    let log_level = env::var("RUST_LOG").unwrap_or_else(|_| "debug".to_string());
+    let log_level = env::var("RUST_LOG").unwrap_or_else(|_| "info".to_string());
 
     // Establish connection to the database
     let mut opt = ConnectOptions::new(db_url);
     opt.sqlx_logging(false).sqlx_logging_level(
         log::LevelFilter::from_str(&log_level).unwrap_or(log::LevelFilter::Info),
     );
-    let conn = Database::connect(opt).await.unwrap();
+    let conn = Database::connect(opt)
+        .await
+        .expect("Failed to connect to the database");
 
     // Apply database migrations
     Migrator::up(&conn, None).await.unwrap();
@@ -55,6 +58,15 @@ pub async fn run() -> std::io::Result<()> {
                 web::scope("/health")
                     .route("", web::head().to(HttpResponse::Ok))
                     .route("", web::get().to(HttpResponse::Ok)),
+            )
+            .service(
+                web::scope("/static").service(
+                    fs::Files::new("", "static")
+                        .index_file("invalid")
+                        .default_handler(|req: ServiceRequest| async {
+                            Ok(req.into_response(HttpResponse::NotFound()))
+                        }),
+                ),
             )
             .service(
                 web::scope("")

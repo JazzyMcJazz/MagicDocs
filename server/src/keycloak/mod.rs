@@ -8,6 +8,5 @@ pub use admin::Keycloak;
 pub use enums::GrantType;
 pub use response_types::TokenResponse;
 
-#[allow(unused_imports)]
 use cache::*;
 use jwk::*;

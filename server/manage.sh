@@ -29,8 +29,8 @@ function start() {
         -e RUST_LOG=$RUST_LOG \
         -e RUST_BACKTRACE=$RUST_BACKTRACE \
         -e DATABASE_URL=postgres://magicdocs:magicdocs@magicdocs-db:5432/magicdocs \
-        -e KEYCLOAK_INTERNAL_ADDR=http://magicdocs-keycloak:8080 \
-        -e KEYCLOAK_EXTERNAL_ADDR=http://192.168.1.234:8080 \
+        -e KEYCLOAK_INTERNAL_ADDR=$KEYCLOAK_INTERNAL_ADDR \
+        -e KEYCLOAK_EXTERNAL_ADDR=$KEYCLOAK_EXTERNAL_ADDR \
         -e KEYCLOAK_USER=$KEYCLOAK_USER \
         -e KEYCLOAK_PASSWORD=$KEYCLOAK_PASSWORD \
         -e KEYCLOAK_REALM=$KEYCLOAK_REALM \
@@ -54,6 +54,23 @@ function build() {
     docker build -t magicdocs:latest $DIR
 }
 
+function generate_entities() {
+    sea generate entity -o $DIR/entity/src -l --with-serde serialize
+}
+
+function download_tailwind() {
+    curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64
+    chmod +x tailwindcss-linux-x64
+}
+
+function install_tailwind() {
+    mv tailwindcss-linux-x64 /usr/local/sbin/tailwind
+}
+
+function run_tailwind() {
+    tailwind -i input.css -o static/css/styles.css --watch
+}
+
 case $OP in
     start)
         start
@@ -66,6 +83,18 @@ case $OP in
         ;;
     build)
         build
+        ;;
+    generate)
+        generate_entities
+        ;;
+    download_tailwind)
+        download_tailwind
+        ;;
+    install_tailwind)
+        install_tailwind
+        ;;
+    tailwind)
+        run_tailwind
         ;;
     *)
         echo "Usage: $0 {start|stop|restart|build}"

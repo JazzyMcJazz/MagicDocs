@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+::-webkit-scrollbar {
+	@apply w-2 h-2 bg-transparent rounded-full;
+}
+
+::-webkit-scrollbar-track {
+	@apply bg-transparent bg-opacity-0 opacity-0 bg-clip-content;
+	@apply border-l-4 border-r-4;
+}
+
+::-webkit-scrollbar-thumb {
+	@apply bg-gray-800 mx-2 rounded-full;
+}
+
+::-webkit-scrollbar-corner {
+	@apply hidden;
+}
+
+body {
+    @apply bg-gray-700 text-white;
+    scrollbar-gutter: stable both-edges;
+}
+
+a {
+    @apply text-blue-500;
+}

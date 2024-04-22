@@ -83,7 +83,6 @@ impl Keycloak {
 
     pub async fn validate_token(&self, token: &str) -> Result<Claims, Box<dyn std::error::Error>> {
         let mut jwks = self.get_jwks().await?;
-        dbg!(&jwks);
 
         let jwk = match jwks.match_kid(token) {
             Some(jwk) => jwk,
