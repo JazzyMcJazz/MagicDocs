@@ -5,7 +5,9 @@ RUN apk update && apk add --no-cache \
     openssl-dev \
     musl-dev \
     gcc \
-    curl
+    curl \
+    nodejs \
+    npm
 
 RUN USER=root cargo new --bin app
 WORKDIR /app
@@ -35,12 +37,18 @@ RUN RUSTFLAGS="-C target-feature=-crt-static" cargo build --release
 
 RUN rm -f /app/target/release/deps/magicdocs*
 
-COPY . .
-
+COPY src src
 RUN RUSTFLAGS="-C target-feature=-crt-static" cargo build --release
 
+COPY static static
+
+COPY input.css .
+COPY tailwind.config.js .
+COPY templates templates
 RUN ./tailwindcss -i input.css -o static/css/styles.css --minify
 
+COPY typescript typescript
+RUN cd typescript && npm install && npm run build
 
 # Runner image
 FROM alpine:3.19.1
