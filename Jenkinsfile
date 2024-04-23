@@ -53,7 +53,9 @@ pipeline {
             }
             steps {
                 withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'DeploymentTargetServer', keyFileVariable: 'SSH_KEY')]) {
-                    sh 'scp -i $SSH_KEY pgvector.tar keycloak.tar magicdocs.tar $SSH_TARGET:~/'
+                    sh 'scp -i $SSH_KEY pgvector.tar $SSH_TARGET:~'
+                    sh 'scp -i $SSH_KEY keycloak.tar $SSH_TARGET:~'
+                    sh 'scp -i $SSH_KEY magicdocs.tar $SSH_TARGET:~'
                 }
                 withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'DeploymentTargetServer', keyFileVariable: 'SSH_KEY')]) {
                     sh "ssh -i $SSH_KEY $SSH_TARGET 'docker load -i pgvector.tar && \
