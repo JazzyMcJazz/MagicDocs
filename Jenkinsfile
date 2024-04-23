@@ -50,9 +50,6 @@ pipeline {
             }
         }
         stage('Deploy to Production') {
-            when {
-                branch 'main'
-            }
             steps {
                 withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'DeploymentTargetServer', keyFileVariable: 'SSH_KEY')]) {
                     sh 'scp -i $SSH_KEY pgvector.tar keycloak.tar magicdocs.tar $SSH_TARGET:~/'
