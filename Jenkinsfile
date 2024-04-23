@@ -1,13 +1,6 @@
 pipeline {
     agent any
-    environment {
-        PG_PASS = credentials('PG_PASS')
-        KC_DB_PASS = credentials('KC_DB_PASS')
-        MD_DB_PASS = credentials('MD_DB_PASS')
-        KEYCLOAK_ADMIN_PASSWORD = credentials('KEYCLOAK_ADMIN_PASSWORD')
-        KEYCLOAK_CLIENT_SECRET = credentials('KEYCLOAK_CLIENT_SECRET')
-        SSH_TARGET="lr@159.69.251.4"
-    }
+
     stages {
         stage('Build Images') {
             steps {
@@ -50,6 +43,14 @@ pipeline {
             }
         }
         stage('Deploy to Production') {
+            environment {
+                PG_PASS = credentials('PG_PASS')
+                KC_DB_PASS = credentials('KC_DB_PASS')
+                MD_DB_PASS = credentials('MD_DB_PASS')
+                KEYCLOAK_ADMIN_PASSWORD = credentials('KEYCLOAK_ADMIN_PASSWORD')
+                KEYCLOAK_CLIENT_SECRET = credentials('KEYCLOAK_CLIENT_SECRET')
+                SSH_TARGET = 'lr@159.69.251.4'
+            }
             steps {
                 withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'DeploymentTargetServer', keyFileVariable: 'SSH_KEY')]) {
                     sh 'scp -i $SSH_KEY pgvector.tar keycloak.tar magicdocs.tar $SSH_TARGET:~/'
