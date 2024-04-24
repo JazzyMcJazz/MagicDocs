@@ -226,10 +226,12 @@ pipeline {
 
             echo 'Cleaning up production server'
             withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'DeploymentTargetServer', keyFileVariable: 'SSH_KEY')]) {
-                try {
-                    sh 'ssh -i $SSH_KEY $SSH_TARGET \'rm pgvector.tar keycloak.tar magicdocs.tar\''
-                } catch (Exception e) {
-                    echo "Failed to remove Docker image tarballs on production server - ${e.getMessage()}"
+                script {
+                    try {
+                        sh 'ssh -i $SSH_KEY $SSH_TARGET \'rm pgvector.tar keycloak.tar magicdocs.tar\''
+                    } catch (Exception e) {
+                        echo "Failed to remove Docker image tarballs on production server - ${e.getMessage()}"
+                    }
                 }
             }
         }
