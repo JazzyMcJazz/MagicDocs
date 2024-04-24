@@ -54,8 +54,6 @@ pipeline {
                         -e KEYCLOAK_CLIENT=magicdocs \
                         -e KEYCLOAK_CLIENT_SECRET= $KEYCLOAK_CLIENT_SECRET \
                         -p 3000:3000 \
-                        --link magicdocs_test_db:db \
-                        --link magicdocs_test_keycloak:keycloak \
                         magicdocs:latest'
 
                     sh 'docker run --rm --name magicdocs_test_playwright \
@@ -147,10 +145,10 @@ pipeline {
         always {
             echo 'Cleaning up Docker images'
             sh 'docker rmi pgvector:latest keycloak:latest magicdocs:latest'
-            sh 'rm pgvector.tar keycloak.tar magicdocs.tar'
-            sh 'ssh -i $SSH_KEY $SSH_TARGET \'rm pgvector.tar keycloak.tar magicdocs.tar\''
             sh 'docker image prune -f'
             sh 'docker volume prune -f'
+            sh 'rm pgvector.tar keycloak.tar magicdocs.tar'
+            sh 'ssh -i $SSH_KEY $SSH_TARGET \'rm pgvector.tar keycloak.tar magicdocs.tar\''
         }
     }
 }

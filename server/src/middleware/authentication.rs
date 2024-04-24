@@ -274,21 +274,21 @@ impl CookieUtils {
 
         let id_cookie = Cookie::build("id", token_response.id_token())
             .path("/")
-            .secure(is_test)
+            .secure(!is_test)
             .http_only(true)
             .expires(expires)
             .finish();
 
         let access_cookie = Cookie::build("ac", token_response.access_token())
             .path("/")
-            .secure(is_test)
+            .secure(!is_test)
             .http_only(true)
             .expires(expires)
             .finish();
 
         let refresh_cookie = Cookie::build("rf", token_response.refresh_token())
             .path("/")
-            .secure(true)
+            .secure(!is_test)
             .http_only(true)
             .expires(rf_expires)
             .finish();

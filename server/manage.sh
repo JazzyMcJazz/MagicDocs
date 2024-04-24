@@ -23,12 +23,10 @@ do
 done < "$ENV_FILE"
 
 function start() {
-    local ENV=$2
-
     docker run -d --name magicdocs-server \
         -p 3000:3000 \
         --network=magicdocs-net \
-        -e RUST_ENV=$ENV \
+        -e RUST_ENV=test \
         -e RUST_LOG=$RUST_LOG \
         -e RUST_BACKTRACE=$RUST_BACKTRACE \
         -e DATABASE_URL=postgres://magicdocs:magicdocs@magicdocs-db:5432/magicdocs \
