@@ -35,7 +35,7 @@ pipeline {
                         echo "Failed to create magicdocs_test_net - ${e.getMessage()}"
                     }
 
-                    sh 'docker run -d --rm --name magicdocs_test_db \
+                    sh 'docker run --rm --name magicdocs_test_db \
                         --network magicdocs_test_net \
                         --network-alias db \
                         -e POSTGRES_PASSWORD=postgres \
@@ -56,7 +56,7 @@ pipeline {
                     // Check the health status of the database container
                     def healthy = false
                     def retries = 0
-                    while (!healthy && retries < 5) { // Timeout after 30 checks
+                    while (!healthy && retries < 10) { // Timeout after 30 checks
                         sleep 1 // Wait 10 seconds before each check
                         def status = sh(script: "docker inspect --format='{{.State.Health.Status}}' magicdocs_test_db", returnStdout: true).trim()
                         if (status == "healthy") {
