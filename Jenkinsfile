@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        SSH_TARGET = credentials('DEPLOY_SSH_TARGET')
+    }
+
     stages {
         stage('Build Images') {
             steps {
@@ -65,11 +69,35 @@ pipeline {
             post {
                 always {
                     echo 'Cleaning up test environment'
-                    sh 'docker stop magicdocs_test_server'
-                    sh 'docker stop magicdocs_test_db'
-                    sh 'docker network rm magicdocs_test_net'
-                    sh 'docker rmi magicdocs_playwright:latest'
-                    sh 'docker volume rm magicdocs_test_db'
+                    try {
+                        sh 'docker stop magicdocs_test_server'
+                    } catch (Exception e) {
+                        echo "Failed to stop magicdocs_test_server - ${e.getMessage()}"
+                    }
+
+                    try {
+                        sh 'docker stop magicdocs_test_db'
+                    } catch (Exception e) {
+                        echo "Failed to stop magicdocs_test_db - ${e.getMessage()}"
+                    }
+
+                    try {
+                        sh 'docker network rm magicdocs_test_net'
+                    } catch (Exception e) {
+                        echo "Failed to remove magicdocs_test_net - ${e.getMessage()}"
+                    }
+
+                    try {
+                        sh 'docker rmi magicdocs_playwright:latest'
+                    } catch (Exception e) {
+                        echo "Failed to remove magicdocs_playwright:latest - ${e.getMessage()}"
+                    }
+
+                    try {
+                        sh 'docker volume rm magicdocs_test_db'
+                    } catch (Exception e) {
+                        echo "Failed to remove magicdocs_test_db volume - ${e.getMessage()}"
+                    }
                 }
             }
         }
@@ -80,7 +108,6 @@ pipeline {
                 MD_DB_PASS = credentials('MD_DB_PASS')
                 KEYCLOAK_ADMIN_PASSWORD = credentials('KEYCLOAK_ADMIN_PASSWORD')
                 KEYCLOAK_CLIENT_SECRET = credentials('KEYCLOAK_CLIENT_SECRET')
-                SSH_TARGET = credentials('DEPLOY_SSH_TARGET')
             }
             steps {
                 echo 'Saving Docker images'
@@ -88,22 +115,18 @@ pipeline {
                 sh 'docker save -o keycloak.tar keycloak:latest'
                 sh 'docker save -o magicdocs.tar magicdocs:latest'
 
-                echo 'Copying Docker images to production server'
                 withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'DeploymentTargetServer', keyFileVariable: 'SSH_KEY')]) {
+                    echo 'Copying Docker images to production server'
                     sh 'scp -i $SSH_KEY pgvector.tar $SSH_TARGET:~'
                     sh 'scp -i $SSH_KEY keycloak.tar $SSH_TARGET:~'
                     sh 'scp -i $SSH_KEY magicdocs.tar $SSH_TARGET:~'
-                }
 
-                echo 'Loading Docker images on production server'
-                withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'DeploymentTargetServer', keyFileVariable: 'SSH_KEY')]) {
+                    echo 'Loading Docker images on production server'
                     sh 'ssh -i $SSH_KEY $SSH_TARGET \'docker load -i pgvector.tar && \
                         docker load -i keycloak.tar && \
                         docker load -i magicdocs.tar\''
-                }
 
-                echo 'Running Docker containers on production server'
-                withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'DeploymentTargetServer', keyFileVariable: 'SSH_KEY')]) {
+                    echo 'Running Docker containers on production server'
                     sh 'ssh -i $SSH_KEY $SSH_TARGET \'nbot run -f -n magicdocs \
                         -a server \
                             -i magicdocs:latest \
@@ -146,9 +169,6 @@ pipeline {
     }
     post {
         always {
-            environment {
-                SSH_TARGET = credentials('DEPLOY_SSH_TARGET')
-            }
             echo 'Cleaning up local environment'
             sh 'docker rmi pgvector:latest keycloak:latest magicdocs:latest'
             sh 'docker network rm magicdocs_test_net'
