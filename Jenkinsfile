@@ -29,7 +29,11 @@ pipeline {
                     sh 'docker build -t magicdocs_playwright:latest e2e/'
 
                     echo 'Creating test environment'
-                    sh 'docker network create magicdocs_test_net'
+                    try {
+                        sh 'docker network create magicdocs_test_net'
+                    } catch (Exception e) {
+                        echo "Failed to create magicdocs_test_net - ${e.getMessage()}"
+                    }
 
                     sh 'docker run -d --rm --name magicdocs_test_db \
                         --network magicdocs_test_net \
@@ -68,8 +72,8 @@ pipeline {
             }
             post {
                 always {
+                    echo 'Cleaning up test environment'
                     script {
-                        echo 'Cleaning up test environment'
                         try {
                             sh 'docker stop magicdocs_test_server'
                         } catch (Exception e) {
@@ -172,12 +176,28 @@ pipeline {
     post {
         always {
             echo 'Cleaning up local environment'
-            sh 'docker rmi pgvector:latest keycloak:latest magicdocs:latest'
-            sh 'docker network rm magicdocs_test_net'
-            sh 'docker image prune -f'
-            sh 'docker volume prune -f'
-            sh 'docker network prune -f'
-            sh 'rm pgvector.tar keycloak.tar magicdocs.tar'
+            script {
+                try {
+                    sh 'docker rmi pgvector:latest keycloak:latest magicdocs:latest'
+                } catch (Exception e) {
+                    echo "Failed to remove Docker images - ${e.getMessage()}"
+                }
+
+                try {
+                    sh 'docker network rm magicdocs_test_net'
+                } catch (Exception e) {
+                    echo "Failed to remove magicdocs_test_net - ${e.getMessage()}"
+                }
+
+                try {
+                    sh 'rm pgvector.tar keycloak.tar magicdocs.tar'
+                } catch (Exception e) {
+                    echo "Failed to remove Docker image tarballs - ${e.getMessage()}"
+                }
+
+                sh 'docker image prune -f'
+                sh 'docker volume prune -f'
+            }
 
             echo 'Cleaning up production server'
             withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'DeploymentTargetServer', keyFileVariable: 'SSH_KEY')]) {
