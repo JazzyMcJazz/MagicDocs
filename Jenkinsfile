@@ -35,8 +35,7 @@ pipeline {
                         echo "Failed to create magicdocs_test_net - ${e.getMessage()}"
                     }
 
-                    // -v magicdocs_test_db:/var/lib/postgresql/data \
-                    sh 'docker run --rm --name magicdocs_test_db \
+                    sh 'docker run -d --rm --name magicdocs_test_db \
                         --network magicdocs_test_net \
                         --network-alias db \
                         -e POSTGRES_PASSWORD=postgres \
@@ -45,13 +44,14 @@ pipeline {
                         -e KC_DB_PASS=unused \
                         -e MD_DB_USER=magicdocs \
                         -e MD_DB_PASS=magicdocs \
+                        -v magicdocs_test_db:/var/lib/postgresql/data \
                         --health-cmd=\'pg_isready -U postgres -d magicdocs\' \
                         --health-start-period=10s \
                         --health-start-interval=5s \
                         --health-interval=5m \
                         --health-timeout=10s \
                         --health-retries=3 \
-                        postgres:13'
+                        pgvector:latest'
 
                     // Check the health status of the database container
                     def healthy = false
