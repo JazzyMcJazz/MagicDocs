@@ -58,7 +58,7 @@ pipeline {
                     def retries = 0
                     while (!healthy && retries < 5) { // Timeout after 30 checks
                         sleep 1 // Wait 10 seconds before each check
-                        def status = sh(script: "docker inspect --format='{{.State.Health.Status}}' ${dbContainerId}", returnStdout: true).trim()
+                        def status = sh(script: "docker inspect --format='{{.State.Health.Status}}' magicdocs_test_db", returnStdout: true).trim()
                         if (status == "healthy") {
                             healthy = true
                             echo 'Database is ready.'
