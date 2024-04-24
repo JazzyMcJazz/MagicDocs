@@ -45,7 +45,32 @@ pipeline {
                         -e MD_DB_USER=magicdocs \
                         -e MD_DB_PASS=magicdocs \
                         -v magicdocs_test_db:/var/lib/postgresql/data \
+                        --health-cmd=\'pg_isready -U postgres -d magicdocs\' \
+                        --health-start-period=10s \
+                        --health-start-interval=5s \
+                        --health-interval=5m \
+                        --health-timeout=10s \
+                        --health-retries=3 \
                         postgres:13'
+
+                    // Check the health status of the database container
+                    def healthy = false
+                    def retries = 0
+                    while (!healthy && retries < 5) { // Timeout after 30 checks
+                        sleep 1 // Wait 10 seconds before each check
+                        def status = sh(script: "docker inspect --format='{{.State.Health.Status}}' ${dbContainerId}", returnStdout: true).trim()
+                        if (status == "healthy") {
+                            healthy = true
+                            echo 'Database is ready.'
+                        } else {
+                            retries++
+                            echo "Waiting for database to be healthy... Attempt ${retries}"
+                        }
+                    }
+
+                    if (!healthy) {
+                        error 'Database did not become healthy in time'
+                    }
 
                     sh 'docker run -d --rm --name magicdocs_test_server \
                         --network magicdocs_test_net \
@@ -201,7 +226,11 @@ pipeline {
 
             echo 'Cleaning up production server'
             withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'DeploymentTargetServer', keyFileVariable: 'SSH_KEY')]) {
-                sh 'ssh -i $SSH_KEY $SSH_TARGET \'rm pgvector.tar keycloak.tar magicdocs.tar\''
+                try {
+                    sh 'ssh -i $SSH_KEY $SSH_TARGET \'rm pgvector.tar keycloak.tar magicdocs.tar\''
+                } catch (Exception e) {
+                    echo "Failed to remove Docker image tarballs on production server - ${e.getMessage()}"
+                }
             }
         }
     }
