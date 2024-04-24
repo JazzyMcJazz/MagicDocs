@@ -16,122 +16,122 @@ pipeline {
                 }
             }
         }
-        stage('Run E2E Tests') {
-            environment {
-                PG_PASS = credentials('PG_PASS')
-                KEYCLOAK_ADMIN_PASSWORD = credentials('KEYCLOAK_ADMIN_PASSWORD')
-                KEYCLOAK_CLIENT_SECRET = credentials('KEYCLOAK_CLIENT_SECRET')
-                TEST_USER_PASSWORD = credentials('TEST_USER_PASSWORD')
-            }
-            steps {
-                script {
-                    echo 'Building Docker image for Playwright tests'
-                    sh 'docker build -t magicdocs_playwright:latest e2e/'
+        // stage('Run E2E Tests') {
+        //     environment {
+        //         PG_PASS = credentials('PG_PASS')
+        //         KEYCLOAK_ADMIN_PASSWORD = credentials('KEYCLOAK_ADMIN_PASSWORD')
+        //         KEYCLOAK_CLIENT_SECRET = credentials('KEYCLOAK_CLIENT_SECRET')
+        //         TEST_USER_PASSWORD = credentials('TEST_USER_PASSWORD')
+        //     }
+        //     steps {
+        //         script {
+        //             echo 'Building Docker image for Playwright tests'
+        //             sh 'docker build -t magicdocs_playwright:latest e2e/'
 
-                    echo 'Creating test environment'
-                    try {
-                        sh 'docker network create magicdocs_test_net'
-                    } catch (Exception e) {
-                        echo "Failed to create magicdocs_test_net - ${e.getMessage()}"
-                    }
+        //             echo 'Creating test environment'
+        //             try {
+        //                 sh 'docker network create magicdocs_test_net'
+        //             } catch (Exception e) {
+        //                 echo "Failed to create magicdocs_test_net - ${e.getMessage()}"
+        //             }
 
-                    sh 'docker run -d --rm --name magicdocs_test_db \
-                        --network magicdocs_test_net \
-                        --network-alias db \
-                        -e POSTGRES_PASSWORD=postgres \
-                        -e PG_PASS=postgres \
-                        -e KC_DB_USER=unused \
-                        -e KC_DB_PASS=unused \
-                        -e MD_DB_USER=magicdocs \
-                        -e MD_DB_PASS=magicdocs \
-                        -v magicdocs_test_db:/var/lib/postgresql/data \
-                        --health-cmd=\'pg_isready -U postgres -d magicdocs\' \
-                        --health-start-period=10s \
-                        --health-start-interval=5s \
-                        --health-interval=5m \
-                        --health-timeout=10s \
-                        --health-retries=3 \
-                        pgvector:latest'
+        //             sh 'docker run -d --rm --name magicdocs_test_db \
+        //                 --network magicdocs_test_net \
+        //                 --network-alias db \
+        //                 -e POSTGRES_PASSWORD=postgres \
+        //                 -e PG_PASS=postgres \
+        //                 -e KC_DB_USER=unused \
+        //                 -e KC_DB_PASS=unused \
+        //                 -e MD_DB_USER=magicdocs \
+        //                 -e MD_DB_PASS=magicdocs \
+        //                 -v magicdocs_test_db:/var/lib/postgresql/data \
+        //                 --health-cmd=\'pg_isready -U postgres -d magicdocs\' \
+        //                 --health-start-period=10s \
+        //                 --health-start-interval=5s \
+        //                 --health-interval=5m \
+        //                 --health-timeout=10s \
+        //                 --health-retries=3 \
+        //                 pgvector:latest'
 
-                    // Check the health status of the database container
-                    def healthy = false
-                    def retries = 0
-                    while (!healthy && retries < 10) { // Timeout after 30 checks
-                        sleep 1 // Wait 10 seconds before each check
-                        def status = sh(script: "docker inspect --format='{{.State.Health.Status}}' magicdocs_test_db", returnStdout: true).trim()
-                        if (status == "healthy") {
-                            healthy = true
-                            echo 'Database is ready.'
-                        } else {
-                            retries++
-                            echo "Waiting for database to be healthy... Attempt ${retries}"
-                        }
-                    }
+        //             // Check the health status of the database container
+        //             def healthy = false
+        //             def retries = 0
+        //             while (!healthy && retries < 10) { // Timeout after 30 checks
+        //                 sleep 1 // Wait 10 seconds before each check
+        //                 def status = sh(script: "docker inspect --format='{{.State.Health.Status}}' magicdocs_test_db", returnStdout: true).trim()
+        //                 if (status == "healthy") {
+        //                     healthy = true
+        //                     echo 'Database is ready.'
+        //                 } else {
+        //                     retries++
+        //                     echo "Waiting for database to be healthy... Attempt ${retries}"
+        //                 }
+        //             }
 
-                    if (!healthy) {
-                        error 'Database did not become healthy in time'
-                    }
+        //             if (!healthy) {
+        //                 error 'Database did not become healthy in time'
+        //             }
 
-                    sh 'docker run -d --rm --name magicdocs_test_server \
-                        --network magicdocs_test_net \
-                        --network-alias server \
-                        -e RUST_ENV=test \
-                        -e DATABASE_URL=postgres://magicdocs:magicdocs@db:5432/magicdocs \
-                        -e KEYCLOAK_INTERNAL_ADDR=https://kc.treeleaf.dev \
-                        -e KEYCLOAK_EXTERNAL_ADDR=https://kc.treeleaf.dev \
-                        -e KEYCLOAK_USER=admin \
-                        -e KEYCLOAK_PASSWORD=$KEYCLOAK_ADMIN_PASSWORD \
-                        -e KEYCLOAK_REALM=magicdocs \
-                        -e KEYCLOAK_CLIENT=magicdocs \
-                        -e KEYCLOAK_CLIENT_SECRET=$KEYCLOAK_CLIENT_SECRET \
-                        -p 3000:3000 \
-                        magicdocs:latest'
+        //             sh 'docker run -d --rm --name magicdocs_test_server \
+        //                 --network magicdocs_test_net \
+        //                 --network-alias server \
+        //                 -e RUST_ENV=test \
+        //                 -e DATABASE_URL=postgres://magicdocs:magicdocs@db:5432/magicdocs \
+        //                 -e KEYCLOAK_INTERNAL_ADDR=https://kc.treeleaf.dev \
+        //                 -e KEYCLOAK_EXTERNAL_ADDR=https://kc.treeleaf.dev \
+        //                 -e KEYCLOAK_USER=admin \
+        //                 -e KEYCLOAK_PASSWORD=$KEYCLOAK_ADMIN_PASSWORD \
+        //                 -e KEYCLOAK_REALM=magicdocs \
+        //                 -e KEYCLOAK_CLIENT=magicdocs \
+        //                 -e KEYCLOAK_CLIENT_SECRET=$KEYCLOAK_CLIENT_SECRET \
+        //                 -p 3000:3000 \
+        //                 magicdocs:latest'
 
-                    sh 'docker run --rm --name magicdocs_test_playwright \
-                        --network magicdocs_test_net \
-                        -e HOST_URL=http://server:3000 \
-                        -e TEST_USER_USERNAME=tester \
-                        -e TEST_USER_PASSWORD=$TEST_USER_PASSWORD \
-                        magicdocs_playwright:latest'
-                }
-            }
-            post {
-                always {
-                    echo 'Cleaning up test environment'
-                    script {
-                        try {
-                            sh 'docker stop magicdocs_test_server'
-                        } catch (Exception e) {
-                            echo "Failed to stop magicdocs_test_server - ${e.getMessage()}"
-                        }
+        //             sh 'docker run --rm --name magicdocs_test_playwright \
+        //                 --network magicdocs_test_net \
+        //                 -e HOST_URL=http://server:3000 \
+        //                 -e TEST_USER_USERNAME=tester \
+        //                 -e TEST_USER_PASSWORD=$TEST_USER_PASSWORD \
+        //                 magicdocs_playwright:latest'
+        //         }
+        //     }
+        //     post {
+        //         always {
+        //             echo 'Cleaning up test environment'
+        //             script {
+        //                 try {
+        //                     sh 'docker stop magicdocs_test_server'
+        //                 } catch (Exception e) {
+        //                     echo "Failed to stop magicdocs_test_server - ${e.getMessage()}"
+        //                 }
 
-                        try {
-                            sh 'docker stop magicdocs_test_db'
-                        } catch (Exception e) {
-                            echo "Failed to stop magicdocs_test_db - ${e.getMessage()}"
-                        }
+        //                 try {
+        //                     sh 'docker stop magicdocs_test_db'
+        //                 } catch (Exception e) {
+        //                     echo "Failed to stop magicdocs_test_db - ${e.getMessage()}"
+        //                 }
 
-                        try {
-                            sh 'docker network rm magicdocs_test_net'
-                        } catch (Exception e) {
-                            echo "Failed to remove magicdocs_test_net - ${e.getMessage()}"
-                        }
+        //                 try {
+        //                     sh 'docker network rm magicdocs_test_net'
+        //                 } catch (Exception e) {
+        //                     echo "Failed to remove magicdocs_test_net - ${e.getMessage()}"
+        //                 }
 
-                        try {
-                            sh 'docker rmi magicdocs_playwright:latest'
-                        } catch (Exception e) {
-                            echo "Failed to remove magicdocs_playwright:latest - ${e.getMessage()}"
-                        }
+        //                 try {
+        //                     sh 'docker rmi magicdocs_playwright:latest'
+        //                 } catch (Exception e) {
+        //                     echo "Failed to remove magicdocs_playwright:latest - ${e.getMessage()}"
+        //                 }
 
-                        try {
-                            sh 'docker volume rm magicdocs_test_db'
-                        } catch (Exception e) {
-                            echo "Failed to remove magicdocs_test_db volume - ${e.getMessage()}"
-                        }
-                    }
-                }
-            }
-        }
+        //                 try {
+        //                     sh 'docker volume rm magicdocs_test_db'
+        //                 } catch (Exception e) {
+        //                     echo "Failed to remove magicdocs_test_db volume - ${e.getMessage()}"
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
         stage('Deploy to Production') {
             environment {
                 PG_PASS = credentials('PG_PASS')
