@@ -161,7 +161,7 @@ pipeline {
                     script {
                         def databaseUrl = 'postgres://magicdocs:$MD_DB_PASS@db:5432/magicdocs'
                         def startCmd = "start --hostname=kc.treeleaf.dev --http-enabled=true --proxy-headers=xforwarded --health-enabled true"
-                        sh "ssh -i $SSH_KEY $SSH_TARGET \"nbot run -f -n magicdocs \
+                        sh 'ssh -i $SSH_KEY $SSH_TARGET \'nbot run -f -n magicdocs \
                             -a server \
                                 -i magicdocs:latest \
                                 -p 3000 \
@@ -196,7 +196,7 @@ pipeline {
                             -a db \
                                 -i pgvector:latest \
                                 -v magicdocs_db:/var/lib/postgresql/data \
-                                --network-alias db\""
+                                --network-alias db\''
                     }
                 }
             }
