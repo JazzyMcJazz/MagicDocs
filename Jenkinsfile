@@ -68,35 +68,37 @@ pipeline {
             }
             post {
                 always {
-                    echo 'Cleaning up test environment'
-                    try {
-                        sh 'docker stop magicdocs_test_server'
-                    } catch (Exception e) {
-                        echo "Failed to stop magicdocs_test_server - ${e.getMessage()}"
-                    }
+                    script {
+                        echo 'Cleaning up test environment'
+                        try {
+                            sh 'docker stop magicdocs_test_server'
+                        } catch (Exception e) {
+                            echo "Failed to stop magicdocs_test_server - ${e.getMessage()}"
+                        }
 
-                    try {
-                        sh 'docker stop magicdocs_test_db'
-                    } catch (Exception e) {
-                        echo "Failed to stop magicdocs_test_db - ${e.getMessage()}"
-                    }
+                        try {
+                            sh 'docker stop magicdocs_test_db'
+                        } catch (Exception e) {
+                            echo "Failed to stop magicdocs_test_db - ${e.getMessage()}"
+                        }
 
-                    try {
-                        sh 'docker network rm magicdocs_test_net'
-                    } catch (Exception e) {
-                        echo "Failed to remove magicdocs_test_net - ${e.getMessage()}"
-                    }
+                        try {
+                            sh 'docker network rm magicdocs_test_net'
+                        } catch (Exception e) {
+                            echo "Failed to remove magicdocs_test_net - ${e.getMessage()}"
+                        }
 
-                    try {
-                        sh 'docker rmi magicdocs_playwright:latest'
-                    } catch (Exception e) {
-                        echo "Failed to remove magicdocs_playwright:latest - ${e.getMessage()}"
-                    }
+                        try {
+                            sh 'docker rmi magicdocs_playwright:latest'
+                        } catch (Exception e) {
+                            echo "Failed to remove magicdocs_playwright:latest - ${e.getMessage()}"
+                        }
 
-                    try {
-                        sh 'docker volume rm magicdocs_test_db'
-                    } catch (Exception e) {
-                        echo "Failed to remove magicdocs_test_db volume - ${e.getMessage()}"
+                        try {
+                            sh 'docker volume rm magicdocs_test_db'
+                        } catch (Exception e) {
+                            echo "Failed to remove magicdocs_test_db volume - ${e.getMessage()}"
+                        }
                     }
                 }
             }
