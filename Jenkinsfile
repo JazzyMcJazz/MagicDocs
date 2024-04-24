@@ -158,20 +158,21 @@ pipeline {
                         docker load -i magicdocs.tar\''
 
                     echo 'Running Docker containers on production server'
-                    sh 'ssh -i $SSH_KEY $SSH_TARGET \'nbot run -f -n magicdocs \
+                    def databaseUrl = 'postgres://magicdocs:$MD_DB_PASS@db:5432/magicdocs'
+                    sh "ssh -i $SSH_KEY $SSH_TARGET \"nbot run -f -n magicdocs \
                         -a server \
                             -i magicdocs:latest \
                             -p 3000 \
                             -e RUST_LOG=info \
                             -e RUST_BACKTRACE=0 \
-                            -e DATABASE_URL=postgres://magicdocs:$MD_DB_PASS@db:5432/magicdocs \
+                            -e DATABASE_URL='$databaseUrl' \
                             -e KEYCLOAK_INTERNAL_ADDR=http://kc:8080 \
                             -e KEYCLOAK_EXTERNAL_ADDR=https://kc.treeleaf.dev \
                             -e KEYCLOAK_USER=admin \
-                            -e KEYCLOAK_PASSWORD=$KEYCLOAK_ADMIN_PASSWORD \
+                            -e KEYCLOAK_PASSWORD='$KEYCLOAK_ADMIN_PASSWORD' \
                             -e KEYCLOAK_REALM=magicdocs \
                             -e KEYCLOAK_CLIENT=magicdocs \
-                            -e KEYCLOAK_CLIENT_SECRET=$KEYCLOAK_CLIENT_SECRET \
+                            -e KEYCLOAK_CLIENT_SECRET='$KEYCLOAK_CLIENT_SECRET' \
                             -o docs.treeleaf.dev \
                             -m admin@treeleaf.dev \
                             --depends-on db \
@@ -181,19 +182,19 @@ pipeline {
                             -p 8080 \
                             -e KC_DB=postgres \
                             -e KC_DB_USERNAME=keycloak \
-                            -e KC_DB_PASSWORD=$KC_DB_PASS \
+                            -e KC_DB_PASSWORD='$KC_DB_PASS' \
                             -e KC_DB_URL_HOST=db \
                             -e KC_DB_URL_PORT=5432 \
                             -e KC_DB_URL_DATABASE=keycloak \
                             -o kc.treeleaf.dev \
                             -m admin@treeleaf.dev \
-                            -c "start --hostname=kc.treeleaf.dev --http-enabled=true --proxy-headers=xforwarded --health-enabled true" \
+                            -c \"start --hostname=kc.treeleaf.dev --http-enabled=true --proxy-headers=xforwarded --health-enabled true\" \
                             --depends-on db \
                             --network-alias kc \
                         -a db \
                             -i pgvector:latest \
                             -v magicdocs_db:/var/lib/postgresql/data \
-                            --network-alias db\''
+                            --network-alias db\""
                 }
             }
         }
