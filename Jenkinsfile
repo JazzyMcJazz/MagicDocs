@@ -5,14 +5,10 @@ pipeline {
         stage('Build Images') {
             steps {
                 script {
+                    echo 'Building Docker images'
                     sh 'docker build -t pgvector:latest database/'
                     sh 'docker build -t keycloak:latest keycloak/'
                     sh 'docker build -t magicdocs:latest server/'
-
-                    // save the images to tar files
-                    sh 'docker save -o pgvector.tar pgvector:latest'
-                    sh 'docker save -o keycloak.tar keycloak:latest'
-                    sh 'docker save -o magicdocs.tar magicdocs:latest'
                 }
             }
         }
@@ -25,8 +21,10 @@ pipeline {
             }
             steps {
                 script {
+                    echo 'Building Docker image for Playwright tests'
                     sh 'docker build -t magicdocs_playwright:latest e2e/'
 
+                    echo 'Creating test environment'
                     sh 'docker network create magicdocs_test_net'
 
                     sh 'docker run -d --rm --name magicdocs_test_db \
@@ -63,15 +61,15 @@ pipeline {
                         -e TEST_USER_PASSWORD=$TEST_USER_PASSWORD \
                         magicdocs_playwright:latest'
                 }
-                post {
-                    always {
-                        echo 'Cleaning up test environment'
-                        sh 'docker stop magicdocs_test_server'
-                        sh 'docker stop magicdocs_test_db'
-                        sh 'docker network rm magicdocs_test_net'
-                        sh 'docker rmi magicdocs_playwright:latest'
-                        sh 'docker volume rm magicdocs_test_db'
-                    }
+            }
+            post {
+                always {
+                    echo 'Cleaning up test environment'
+                    sh 'docker stop magicdocs_test_server'
+                    sh 'docker stop magicdocs_test_db'
+                    sh 'docker network rm magicdocs_test_net'
+                    sh 'docker rmi magicdocs_playwright:latest'
+                    sh 'docker volume rm magicdocs_test_db'
                 }
             }
         }
@@ -85,21 +83,26 @@ pipeline {
                 SSH_TARGET = credentials('DEPLOY_SSH_TARGET')
             }
             steps {
-                // Upload the Docker images to the production server
+                echo 'Saving Docker images'
+                sh 'docker save -o pgvector.tar pgvector:latest'
+                sh 'docker save -o keycloak.tar keycloak:latest'
+                sh 'docker save -o magicdocs.tar magicdocs:latest'
+
+                echo 'Copying Docker images to production server'
                 withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'DeploymentTargetServer', keyFileVariable: 'SSH_KEY')]) {
                     sh 'scp -i $SSH_KEY pgvector.tar $SSH_TARGET:~'
                     sh 'scp -i $SSH_KEY keycloak.tar $SSH_TARGET:~'
                     sh 'scp -i $SSH_KEY magicdocs.tar $SSH_TARGET:~'
                 }
 
-                // Load the Docker images on the production server
+                echo 'Loading Docker images on production server'
                 withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'DeploymentTargetServer', keyFileVariable: 'SSH_KEY')]) {
                     sh 'ssh -i $SSH_KEY $SSH_TARGET \'docker load -i pgvector.tar && \
                         docker load -i keycloak.tar && \
                         docker load -i magicdocs.tar\''
                 }
 
-                // Run the Docker containers on the production server
+                echo 'Running Docker containers on production server'
                 withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'DeploymentTargetServer', keyFileVariable: 'SSH_KEY')]) {
                     sh 'ssh -i $SSH_KEY $SSH_TARGET \'nbot run -f -n magicdocs \
                         -a server \
@@ -142,13 +145,22 @@ pipeline {
         }
     }
     post {
+        environment {
+            SSH_TARGET = credentials('DEPLOY_SSH_TARGET')
+        }
         always {
-            echo 'Cleaning up Docker images'
+            echo 'Cleaning up local environment'
             sh 'docker rmi pgvector:latest keycloak:latest magicdocs:latest'
+            sh 'docker network rm magicdocs_test_net'
             sh 'docker image prune -f'
             sh 'docker volume prune -f'
+            sh 'docker network prune -f'
             sh 'rm pgvector.tar keycloak.tar magicdocs.tar'
-            sh 'ssh -i $SSH_KEY $SSH_TARGET \'rm pgvector.tar keycloak.tar magicdocs.tar\''
+
+            echo 'Cleaning up production server'
+            withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'DeploymentTargetServer', keyFileVariable: 'SSH_KEY')]) {
+                sh 'ssh -i $SSH_KEY $SSH_TARGET \'rm pgvector.tar keycloak.tar magicdocs.tar\''
+            }
         }
     }
 }
