@@ -35,6 +35,7 @@ pipeline {
                         echo "Failed to create magicdocs_test_net - ${e.getMessage()}"
                     }
 
+                    // -v magicdocs_test_db:/var/lib/postgresql/data \
                     sh 'docker run --rm --name magicdocs_test_db \
                         --network magicdocs_test_net \
                         --network-alias db \
@@ -44,7 +45,6 @@ pipeline {
                         -e KC_DB_PASS=unused \
                         -e MD_DB_USER=magicdocs \
                         -e MD_DB_PASS=magicdocs \
-                        -v magicdocs_test_db:/var/lib/postgresql/data \
                         --health-cmd=\'pg_isready -U postgres -d magicdocs\' \
                         --health-start-period=10s \
                         --health-start-interval=5s \
