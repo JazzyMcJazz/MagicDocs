@@ -68,37 +68,11 @@ pipeline {
                 post {
                     always {
                         echo 'Cleaning up test environment'
-                        steps {
-                            try {
-                                sh 'docker stop magicdocs_test_server'
-                            } catch (Exception e) {
-                                echo "Failed to stop the server container - ${e.getMessage()}"
-                            }
-
-                            try {
-                                sh 'docker stop magicdocs_test_db'
-                            } catch (Exception e) {
-                                echo "Failed to stop the database container - ${e.getMessage()}"
-                            }
-
-                            try {
-                                sh 'docker network rm magicdocs_test_net'
-                            } catch (Exception e) {
-                                echo "Failed to remove the network - ${e.getMessage()}"
-                            }
-
-                            try {
-                                sh 'docker rmi magicdocs_playwright:latest'
-                            } catch (Exception e) {
-                                echo "Failed to remove the Playwright image - ${e.getMessage()}"
-                            }
-
-                            try {
-                                sh 'docker volume rm magicdocs_test_db'
-                            } catch (Exception e) {
-                                echo "Failed to remove the database volume - ${e.getMessage()}"
-                            }
-                        }
+                        sh 'docker stop magicdocs_test_server'
+                        sh 'docker stop magicdocs_test_db'
+                        sh 'docker network rm magicdocs_test_net'
+                        sh 'docker rmi magicdocs_playwright:latest'
+                        sh 'docker volume rm magicdocs_test_db'
                     }
                 }
             }
@@ -172,35 +146,11 @@ pipeline {
     post {
         always {
             echo 'Cleaning up Docker images'
-            try {
-                sh 'docker rmi pgvector:latest keycloak:latest magicdocs:latest'
-            } catch (Exception e) {
-                echo "Failed to clean up Docker images - ${e.getMessage()}"
-            }
-
-            try {
-                sh 'rm pgvector.tar keycloak.tar magicdocs.tar'
-            } catch (Exception e) {
-                echo "Failed to clean up Docker tar files - ${e.getMessage()}"
-            }
-
-            try {
-                sh 'ssh -i $SSH_KEY $SSH_TARGET \'rm pgvector.tar keycloak.tar magicdocs.tar\''
-            } catch (Exception e) {
-                echo "Failed to clean up Docker tar files on the server - ${e.getMessage()}"
-            }
-
-            try {
-                sh 'docker image prune -f'
-            } catch (Exception e) {
-                echo "Failed to clean up Docker images - ${e.getMessage()}"
-            }
-
-            try {
-                sh 'docker volume prune -f'
-            } catch (Exception e) {
-                echo "Failed to clean up Docker volumes - ${e.getMessage()}"
-            }
+            sh 'docker rmi pgvector:latest keycloak:latest magicdocs:latest'
+            sh 'rm pgvector.tar keycloak.tar magicdocs.tar'
+            sh 'ssh -i $SSH_KEY $SSH_TARGET \'rm pgvector.tar keycloak.tar magicdocs.tar\''
+            sh 'docker image prune -f'
+            sh 'docker volume prune -f'
         }
     }
 }
