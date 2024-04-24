@@ -263,6 +263,8 @@ impl CookieUtils {
     fn build_cookies(
         token_response: &'_ TokenResponse,
     ) -> Result<(Cookie<'_>, Cookie<'_>, Cookie<'_>), Box<dyn std::error::Error>> {
+        let is_test = std::env::var("RUST_ENV").unwrap_or_else(|_| "".to_string()) == "test";
+
         let now = cookie::time::OffsetDateTime::now_utc().unix_timestamp();
         let expires = cookie::time::OffsetDateTime::from_unix_timestamp(
             now + token_response.expires_in() - 10,
@@ -272,14 +274,14 @@ impl CookieUtils {
 
         let id_cookie = Cookie::build("id", token_response.id_token())
             .path("/")
-            .secure(true)
+            .secure(is_test)
             .http_only(true)
             .expires(expires)
             .finish();
 
         let access_cookie = Cookie::build("ac", token_response.access_token())
             .path("/")
-            .secure(true)
+            .secure(is_test)
             .http_only(true)
             .expires(expires)
             .finish();
