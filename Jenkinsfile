@@ -145,10 +145,10 @@ pipeline {
         }
     }
     post {
-        environment {
-            SSH_TARGET = credentials('DEPLOY_SSH_TARGET')
-        }
         always {
+            environment {
+                SSH_TARGET = credentials('DEPLOY_SSH_TARGET')
+            }
             echo 'Cleaning up local environment'
             sh 'docker rmi pgvector:latest keycloak:latest magicdocs:latest'
             sh 'docker network rm magicdocs_test_net'
