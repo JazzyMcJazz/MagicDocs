@@ -68,7 +68,7 @@ pipeline {
                 post {
                     always {
                         echo 'Cleaning up test environment'
-                        step {
+                        steps {
                             try {
                                 sh 'docker stop magicdocs_test_server'
                             } catch (Exception e) {
