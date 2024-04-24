@@ -58,7 +58,7 @@ pipeline {
                         -e KEYCLOAK_PASSWORD=$KEYCLOAK_ADMIN_PASSWORD \
                         -e KEYCLOAK_REALM=magicdocs \
                         -e KEYCLOAK_CLIENT=magicdocs \
-                        -e KEYCLOAK_CLIENT_SECRET= $KEYCLOAK_CLIENT_SECRET \
+                        -e KEYCLOAK_CLIENT_SECRET=$KEYCLOAK_CLIENT_SECRET \
                         -p 3000:3000 \
                         magicdocs:latest'
 
