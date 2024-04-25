@@ -116,7 +116,7 @@ pipeline {
                     script {
                         try {
                             archiveArtifacts artifacts: 'index.html',
-                                allowEmptyArchive: true,
+                                allowEmptyArchive: true
                         } catch (Exception e) {
                             echo "Failed to archive Playwright test results - ${e.getMessage()}"
                         }
