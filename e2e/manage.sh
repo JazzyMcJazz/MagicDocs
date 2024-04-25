@@ -41,7 +41,7 @@ function test_pipeline() {
         magicdocs_test_playwright:latest
 
     EXIT_CODE=$(docker wait playwright)
-    sleep 3
+    echo "Playwright tests exited with code $EXIT_CODE"
     docker ps -a
 
     # docker start playwright sh -c "tail -f /dev/null"

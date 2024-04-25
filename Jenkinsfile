@@ -101,7 +101,7 @@ pipeline {
                         -e TEST_USER_PASSWORD=$TEST_USER_PASSWORD \
                         magicdocs_playwright:latest'
 
-                    def exitCode = sh(script: 'docker wait magicdocs_test_playwright', returnStatus: true, returnStdout: false)
+                    def exitCode = sh(script: 'docker wait magicdocs_test_playwright', returnStdout: true).trim().toInteger()
                     echo "Playwright tests exited with code ${exitCode}"
 
                     sh 'docker cp magicdocs_test_playwright:/app/playwright-report/index.html .'
