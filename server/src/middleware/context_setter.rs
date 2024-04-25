@@ -59,10 +59,12 @@ where
         };
 
         let user_data = UserData::from_claims(&claims);
+        let env = std::env::var("RUST_ENV").unwrap_or_else(|_| "prod".to_string());
 
         let mut context = Context::new();
         context.insert("path", req.path());
         context.insert("user", &user_data);
+        context.insert("env", &env);
 
         // Add the context to the request extensions
         req.extensions_mut().insert(context);

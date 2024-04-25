@@ -67,6 +67,9 @@ pub async fn run() -> std::io::Result<()> {
                     .route("", web::get().to(HttpResponse::Ok)),
             )
             .service(
+                web::scope("/browser-sync").route("", web::get().to(routes::browser_sync::sse)),
+            )
+            .service(
                 web::scope("/static")
                     .wrap(
                         actix_web::middleware::DefaultHeaders::new()
@@ -103,5 +106,14 @@ fn init(cfg: &mut web::ServiceConfig) {
         web::scope("/projects")
             .wrap(middleware::Authorization { admin: true })
             .route("/new", web::get().to(routes::projects::new)),
+    );
+
+    cfg.service(
+        web::scope("/admin")
+            .wrap(middleware::Authorization { admin: true })
+            .route("", web::get().to(routes::admin::dashboard))
+            .route("/users", web::get().to(routes::admin::users))
+            .route("/roles", web::get().to(routes::admin::roles))
+            .route("/permissions", web::get().to(routes::admin::permissions)),
     );
 }

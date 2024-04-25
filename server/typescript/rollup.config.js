@@ -9,6 +9,7 @@ export default {
         global: 'src/global.ts',
         main: 'src/main.ts',
         test: 'src/test.ts',
+        'browser-sync-client': 'src/browser-sync-client.ts',
     },
     output: {
         dir: '../static/js',  // Output directory for all bundles

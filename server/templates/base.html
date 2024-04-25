@@ -8,9 +8,14 @@
     <script type="module" src="/static/js/global.js"></script>
     <script type="module" src="/static/js/main.js"></script>
     <script type="module" src="/static/js/test.js"></script>
+    {% if env == 'dev' %}
+        <script type="module" src="http://localhost:3000/static/js/browser-sync-client.js"></script>
+    {% endif %}
     <link rel="stylesheet" href="/static/css/styles.css" />
     <link rel="shortcut icon" href="/static/favicon.ico" />
-    <title>MagicDocs</title>
+    {% block title %}
+        <title>Magic Docs</title>
+    {% endblock %}
 </head>
 <body hx-boost="true">
     <header class="fixed w-full h-14 flex items-center border-b-1 border-base z-10">

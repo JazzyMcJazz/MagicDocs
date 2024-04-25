@@ -11,7 +11,12 @@ module.exports = {
             colors: {
                 base: '#414141',
             },
+            gridTemplateColumns: {
+                base: 'auto 1fr',
+            },
         },
     },
-    plugins: [],
+    plugins: [
+        require('@tailwindcss/forms'),
+    ],
 }

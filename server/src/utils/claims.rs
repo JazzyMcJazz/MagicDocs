@@ -55,6 +55,7 @@ impl Claims {
             .magicdocs
             .roles
             .contains(&"admin".to_string())
+            || self.is_super_admin()
     }
     pub fn is_super_admin(&self) -> bool {
         self.resource_access

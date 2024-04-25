@@ -1,7 +1,38 @@
 {% extends 'base.html' %}
 
+{% block title %}
+    <title>Magic Docs - Create Project</title>
+{% endblock %}
+
 {% block main %}
-<div class="p-10">
-    <h1>Create new Project</h1>
-</div>
+    <div class="p-10">
+        <h1>Create new Project</h1>
+        <p>Projects are the way to organize your documentation</p>
+
+        <hr class="my-8"/>
+
+        <div class="grid grid-cols-base gap-y-4 gap-x-8 max-w-[34rem]">
+            <form action="/projects" method="POST">
+
+                <label for="project-name">Project Name</label>
+                <div class="flex items-center">
+                    <div class="px-2 w-10 h-full bg-[#202020] border-l-2 border-t-2 border-b-2 border-base rounded-l-sm">
+                        {% include 'icons/title.svg' %}
+                    </div>
+                    <input type="text" class="!rounded-l-none w-full" id="project-name" name="project-name" required>
+                </div>
+
+                <label for="description">Description</label>
+                <div class="flex items-center">
+                    <div class="px-2 w-10 h-full bg-[#202020] border-l-2 border-t-2 border-b-2 border-base rounded-l-sm">
+                        {% include 'icons/pen.svg' %}
+                    </div>
+                    <textarea class="!rounded-l-none w-full max-h-96" id="description" name="description" rows="4"></textarea>
+                </div>
+
+                <button type="submit" class="absolute bottom-8 button w-fit">Create Project</button>
+            </form>
+        </div>
+    </div>
+
 {% endblock %}

@@ -34,6 +34,9 @@
             >
                 <a href="/profile" class="nav-user-menu-item">Profile</a>
                 <a hx-post="/flush" class="nav-user-menu-item">Flush Permissions</a>
+                {% if user.is_admin %}
+                    <a href="/admin" class="nav-user-menu-item">Manage</a>
+                {% endif %}
                 <a href="/logout" class="nav-user-menu-item">Logout</a>
             </div>
         </div>
