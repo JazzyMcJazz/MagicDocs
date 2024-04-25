@@ -99,7 +99,7 @@ pub async fn run() -> std::io::Result<()> {
 
 fn init(cfg: &mut web::ServiceConfig) {
     cfg.route("/", web::get().to(routes::index));
-    cfg.route("/logout", web::get().to(routes::logout));
+    cfg.route("/logout", web::post().to(routes::logout));
     cfg.route("/flush", web::post().to(routes::refresh));
 
     cfg.service(

@@ -90,7 +90,9 @@ nav a {
 }
 
 .active-tab {
-	@apply bg-[#282828] hover:bg-[#282828] !border-b-0;
+	@apply !border-b-0;
+	/* @apply bg-[#282828] hover:bg-[#282828]; */
+	@apply bg-gradient-to-t from-[#282828] to-[#101010];
 }
 
 .browser-sync-spinner {
