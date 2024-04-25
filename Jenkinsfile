@@ -24,10 +24,14 @@ pipeline {
                 TEST_USER_PASSWORD = credentials('TEST_USER_PASSWORD')
             }
             steps {
+                // Build the Playwright test image
                 script {
                     echo 'Building Docker image for Playwright tests'
                     sh 'docker build -t magicdocs_playwright:latest e2e/'
+                }
 
+                // Setup the test environment
+                script {
                     echo 'Creating test environment'
                     try {
                         sh 'docker network create magicdocs_test_net'
@@ -86,19 +90,43 @@ pipeline {
                         -e KEYCLOAK_CLIENT_SECRET=$KEYCLOAK_CLIENT_SECRET \
                         -p 3000:3000 \
                         magicdocs:latest'
+                }
 
-                    sh 'docker run --rm --name magicdocs_test_playwright \
+                // Run the Playwright tests and save the results
+                script {
+                    sh 'docker run -d --name magicdocs_test_playwright \
                         --network magicdocs_test_net \
                         -e HOST_URL=http://server:3000 \
                         -e TEST_USER_USERNAME=tester \
                         -e TEST_USER_PASSWORD=$TEST_USER_PASSWORD \
                         magicdocs_playwright:latest'
+
+                    def exitCode = sh(script: 'docker wait magicdocs_test_playwright', returnStatus: true)
+
+                    sh 'docker cp magicdocs_test_playwright:/app/playwright-report/index.html .'
+
+                    if (exitCode != 0) {
+                        error 'Playwright tests failed'
+                    }
                 }
             }
             post {
                 always {
                     echo 'Cleaning up test environment'
                     script {
+                        try {
+                            archiveArtifacts artifacts: 'index.html',
+                                allowEmptyArchive: true,
+                        } catch (Exception e) {
+                            echo "Failed to archive Playwright test results - ${e.getMessage()}"
+                        }
+
+                        try {
+                            sh 'docker rm magicdocs_test_playwright'
+                        } catch (Exception e) {
+                            echo "Failed to remove magicdocs_test_playwright - ${e.getMessage()}"
+                        }
+
                         try {
                             sh 'docker stop magicdocs_test_server'
                         } catch (Exception e) {

@@ -17,8 +17,9 @@ test.afterEach(async ({ page }) => {
 
 test('is logged ind', async ({ page }) => {
    await page.goto('/');
-   await expect(page).toHaveTitle(/MagicDocs/);
+   await expect(page).toHaveTitle(/Magic Docs/);
 });
+
 
 // test('get started link', async ({ page }) => {
 //    await page.goto('https://playwright.dev/');

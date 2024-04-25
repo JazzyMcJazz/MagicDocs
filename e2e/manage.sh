@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 
 set -e
 
@@ -32,6 +32,31 @@ function test() {
         magicdocs_test_playwright:latest
 }
 
+function test_pipeline() {
+    docker run -d --name playwright \
+        --network magicdocs-net \
+        -e HOST_URL=$HOST_URL \
+        -e TEST_USER_USERNAME=$TEST_USER_USERNAME \
+        -e TEST_USER_PASSWORD=$TEST_USER_PASSWORD \
+        magicdocs_test_playwright:latest
+
+    EXIT_CODE=$(docker wait playwright)
+    sleep 3
+    docker ps -a
+
+    # docker start playwright sh -c "tail -f /dev/null"
+    docker cp playwright:/app/playwright-report/index.html $DIR/playwright-report/index.html
+    docker rm playwright
+
+    echo "EXIT_CODE: $EXIT_CODE"
+    if [ $EXIT_CODE -ne 0 ]; then
+        echo "Tests failed"
+        exit 1
+    fi
+
+    echo "Tests passed"
+}
+
 function build() {
     docker build -t magicdocs_test_playwright:latest $DIR
 }
@@ -45,6 +70,9 @@ function bt() {
 case $OP in
     test)
         test
+        ;;
+    test_pipeline)
+        test_pipeline
         ;;
     build)
         build
