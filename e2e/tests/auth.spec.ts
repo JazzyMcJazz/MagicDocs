@@ -12,7 +12,11 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.afterEach(async ({ page }) => {
-   await page.goto('/logout');
+   await page.goto('/');
+   await page.click('#nav-user-menu-btn');
+   await page.click('a[hx-post="/logout"]');
+   await expect(page).toHaveTitle(/Sign in to Magic Docs/);
+
 });
 
 test('is logged ind', async ({ page }) => {
