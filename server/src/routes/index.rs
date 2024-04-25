@@ -1,21 +1,18 @@
-use actix_web::{web, HttpResponse};
-use tera::Context;
+use actix_web::{web, HttpRequest, HttpResponse};
 
-use crate::{database::Repo, server::AppState};
+use crate::{database::Repo, server::AppState, utils::extractor::Extractor};
 
 // GET /
-pub async fn index(data: web::Data<AppState>) -> HttpResponse {
+pub async fn index(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
     let tera = &data.tera;
     let db = &data.conn;
+    let mut context = Extractor::extract_context(&req);
 
     let projects = match db.projects().get_all().await {
         Ok(projects) => projects,
         Err(_) => return HttpResponse::InternalServerError().body("Database error"),
     };
 
-    dbg!(&projects);
-
-    let mut context = Context::new();
     context.insert("projects", &projects);
 
     let Ok(html) = tera.render("index.html", &context) else {

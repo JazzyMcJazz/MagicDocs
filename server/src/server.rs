@@ -22,6 +22,7 @@ pub struct AppState {
 pub async fn run() -> std::io::Result<()> {
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL in .env");
     let log_level = env::var("RUST_LOG").unwrap_or_else(|_| "info".to_string());
+    let rust_env = env::var("RUST_ENV").unwrap_or_else(|_| "prod".to_string());
 
     // Establish connection to the database
     let mut opt = ConnectOptions::new(db_url);
@@ -51,6 +52,12 @@ pub async fn run() -> std::io::Result<()> {
 
     // Start the HTTP server
     let mut server = HttpServer::new(move || {
+        let cache_control = if rust_env == "dev" {
+            "no-store"
+        } else {
+            "max-age=600"
+        };
+
         App::new()
             .wrap(Logger::default())
             .app_data(web::Data::new(state.clone()))
@@ -60,17 +67,23 @@ pub async fn run() -> std::io::Result<()> {
                     .route("", web::get().to(HttpResponse::Ok)),
             )
             .service(
-                web::scope("/static").service(
-                    fs::Files::new("", "static")
-                        .index_file("invalid")
-                        .default_handler(|req: ServiceRequest| async {
-                            Ok(req.into_response(HttpResponse::NotFound()))
-                        }),
-                ),
+                web::scope("/static")
+                    .wrap(
+                        actix_web::middleware::DefaultHeaders::new()
+                            .add(("Cache-Control", cache_control)),
+                    )
+                    .service(
+                        fs::Files::new("", "static")
+                            .index_file("invalid")
+                            .default_handler(|req: ServiceRequest| async {
+                                Ok(req.into_response(HttpResponse::NotFound()))
+                            }),
+                    ),
             )
             .service(
                 web::scope("")
-                    .wrap(middleware::Authentication)
+                    .wrap(middleware::ContextSetter) // 2
+                    .wrap(middleware::Authentication) // 1
                     .configure(init),
             )
     });
@@ -84,4 +97,11 @@ pub async fn run() -> std::io::Result<()> {
 fn init(cfg: &mut web::ServiceConfig) {
     cfg.route("/", web::get().to(routes::index));
     cfg.route("/logout", web::get().to(routes::logout));
+    cfg.route("/flush", web::post().to(routes::refresh));
+
+    cfg.service(
+        web::scope("/projects")
+            .wrap(middleware::Authorization { admin: true })
+            .route("/new", web::get().to(routes::projects::new)),
+    );
 }

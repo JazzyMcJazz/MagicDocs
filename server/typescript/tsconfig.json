@@ -11,6 +11,7 @@
         "declaration": false,
     },
     "include": [
-        "src/**/*"
+        "src/**/*",
+        "htmx.d.ts",
     ]
 }

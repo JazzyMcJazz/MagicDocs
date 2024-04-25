@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://unpkg.com/htmx.org@1.9.3" integrity="sha384-lVb3Rd/Ca0AxaoZg5sACe8FJKF0tnUgR2Kd7ehUOG5GCcROv5uBIZsOqovBAcWua" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/htmx.org/dist/ext/response-targets.js"></script>
+    <script type="module" src="/static/js/global.js"></script>
     <script type="module" src="/static/js/main.js"></script>
     <script type="module" src="/static/js/test.js"></script>
     <link rel="stylesheet" href="/static/css/styles.css" />
@@ -12,16 +13,16 @@
     <title>MagicDocs</title>
 </head>
 <body hx-boost="true">
-    <header class="h-12 bg-[#050544]">
+    <header class="fixed w-full h-14 flex items-center border-b-1 border-base z-10">
         {% include 'header.html' %}
     </header>
 
-    <main class="min-h-[calc(100dvh-6rem)]">
+    <aside class="fixed top-14 w-52 h-[calc(100dvh-3.5rem)] border-r-1 border-base z-10">
+        {% include 'sidebar.html' %}
+    </aside>
+
+    <main id="page" class="mt-14 w-[calc(100dvw-13rem)] float-end min-h-[calc(100dvh-3.5rem)]">
         {% block main %}{% endblock %}
     </main>
-
-    <footer class="h-12 bg-[#050544]">
-        {% include 'footer.html' %}
-    </footer>
 </body>
 </html>

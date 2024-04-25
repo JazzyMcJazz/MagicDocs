@@ -20,10 +20,34 @@
 }
 
 body {
-    @apply bg-gray-700 text-white;
-    scrollbar-gutter: stable both-edges;
+	@apply bg-[#282828] text-white;
+	scrollbar-gutter: stable both-edges;
+}
+
+header {
+	@apply bg-[#101010]
+}
+
+aside {
+	@apply bg-[#101010]
 }
 
 a {
-    @apply text-blue-500;
+	@apply text-blue-500;
+}
+
+nav {
+	@apply text-gray-200;
+}
+
+nav a {
+	@apply text-gray-200 font-bold;
+}
+
+.button {
+	@apply text-stone-300 font-bold px-4 py-2 border-1 border-stone-300 rounded-sm hover:brightness-125;
+}
+
+.nav-user-menu-item {
+	@apply block px-4 py-2 hover:bg-neutral-200 text-black font-normal whitespace-nowrap cursor-pointer;
 }

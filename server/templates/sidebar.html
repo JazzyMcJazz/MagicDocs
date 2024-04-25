@@ -1,0 +1,13 @@
+
+<div class="flex flex-col h-full">
+    {% if user.roles is containing("admin") %}
+        <div class="w-full flex justify-center p-4">
+            <button
+                hx-get="/projects/new"
+                hx-target="body"
+                hx-push-url="true"
+                class="button w-full"
+            >New Project</button>
+        </div>
+    {% endif %}
+</div>

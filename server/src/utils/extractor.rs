@@ -1,3 +1,8 @@
+use actix_web::HttpMessage;
+use tera::Context;
+
+use super::claims::Claims;
+
 pub struct Extractor;
 
 impl Extractor {
@@ -14,6 +19,32 @@ impl Extractor {
     pub fn uri(scheme: &str, host: &str, uri: &str) -> String {
         format!("{}://{}{}", scheme, host, uri)
     }
+
+    pub fn extract_claims(req: &impl HttpMessage) -> Result<Claims, ()> {
+        let ext = req.extensions();
+        match ext.get::<Claims>() {
+            Some(claims) => Ok(claims.clone()),
+            None => Err(()),
+        }
+    }
+
+    pub fn extract_context(req: &impl HttpMessage) -> Context {
+        let ext = req.extensions();
+        ext.get::<Context>().cloned().unwrap_or(Context::new())
+    }
+
+    // pub fn unwrap_claims_and_context(req: &impl HttpMessage) -> (Claims, Context) {
+    //     let ext = req.extensions();
+
+    //     let claims = ext.get::<Claims>().cloned().unwrap();
+    //     let context = ext
+    //         .get::<Context>()
+    //         .cloned()
+    //         .unwrap_or(Context::new())
+    //         .to_owned();
+
+    //     (claims, context)
+    // }
 }
 
 #[cfg(test)]

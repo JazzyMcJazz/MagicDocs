@@ -1,11 +1,41 @@
 <nav class="w-full">
     <div class="flex gap-2 items-center justify-between px-2">
         <div>
-            <a href="/" class="flex items-center gap-2 text-xl">
-                <img src="/static/img/logo.png" alt="Magic Docs" class="h-12 rounded-md">
-                <b>Magic Docs</b>
+            <a
+                href="/"
+                hx-get="/"
+                hx-target="body"
+                hx-push-url="true"
+                class="flex items-center gap-2 text-xl"
+            >
+                <img src="/static/img/logo.png" alt="Magic Docs" class="h-12 p-1 rounded-md">
+                Magic Docs
             </a>
         </div>
-        <a href="/logout" hx-disable>Logout</a>
+        <p>Hello, {{ user.given_name }}</p>
+
+        <div class="relative flex gap-10 items-center mr-2">
+            <button
+                id="nav-user-menu-btn"
+                class="font-bold flex gap-1 items-center"
+            >
+                {{ user.given_name }}
+                <div class="w-5 mt-1">
+                    {% include 'icons/triangle-down.svg' %}
+                </div>
+            </button>
+            <div class="w-10">
+                {% include 'icons/person-circle.svg' %}
+            </div>
+
+            <div
+                id="nav-user-menu"
+                class="hidden absolute right-0 top-10 bg-neutral-100 border-1 border-base rounded-md shadow-md py-2"
+            >
+                <a href="/profile" class="nav-user-menu-item">Profile</a>
+                <a hx-post="/flush" class="nav-user-menu-item">Flush Permissions</a>
+                <a href="/logout" class="nav-user-menu-item">Logout</a>
+            </div>
+        </div>
     </div>
 </nav>

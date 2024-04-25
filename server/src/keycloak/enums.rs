@@ -1,10 +1,10 @@
 #[derive(Debug)]
-pub enum GrantType {
+pub enum GrantType<'a> {
     AuthorizationCode(String),
-    RefreshToken(String),
+    RefreshToken(&'a str),
 }
 
-impl GrantType {
+impl<'a> GrantType<'a> {
     pub fn type_field_value(&self) -> &str {
         match self {
             GrantType::AuthorizationCode(_) => "authorization_code",

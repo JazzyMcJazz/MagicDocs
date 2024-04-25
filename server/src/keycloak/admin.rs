@@ -49,7 +49,7 @@ impl Keycloak {
 
     pub async fn exchange_token(
         &self,
-        grant_type: GrantType,
+        grant_type: GrantType<'_>,
         redirect_uri: &str,
     ) -> Result<super::TokenResponse, Box<dyn std::error::Error>> {
         let client = reqwest::Client::new();

@@ -1,12 +1,15 @@
 use std::{
     fmt,
     future::{ready, Ready},
+    rc::Rc,
 };
 
 use actix_web::{
-    cookie::{self, Cookie},
     dev::{forward_ready, ConnectionInfo, Service, ServiceRequest, ServiceResponse, Transform},
-    http::{header, StatusCode, Uri},
+    http::{
+        header::{self, HeaderMap},
+        StatusCode, Uri,
+    },
     web, Error, HttpMessage, HttpResponse, ResponseError,
 };
 use futures_util::future::LocalBoxFuture;
@@ -15,14 +18,14 @@ use tera::Context;
 use crate::{
     keycloak::{GrantType, TokenResponse},
     server::AppState,
-    utils::extractor::Extractor,
+    utils::{cookies, extractor::Extractor},
 };
 
 pub struct Authentication;
 
 impl<S, B> Transform<S, ServiceRequest> for Authentication
 where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
     S::Future: 'static,
 {
     type Response = ServiceResponse<B>;
@@ -32,17 +35,19 @@ where
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     fn new_transform(&self, service: S) -> Self::Future {
-        ready(Ok(AuthenticationMiddleware { service }))
+        ready(Ok(AuthenticationMiddleware {
+            service: Rc::new(service),
+        }))
     }
 }
 
 pub struct AuthenticationMiddleware<S> {
-    service: S,
+    service: Rc<S>,
 }
 
 impl<S, B> Service<ServiceRequest> for AuthenticationMiddleware<S>
 where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = actix_web::Error>,
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = actix_web::Error> + 'static,
     S::Future: 'static,
 {
     type Response = S::Response;
@@ -55,6 +60,7 @@ where
         let app_data = req.app_data::<web::Data<AppState>>().cloned();
         let conn_info = req.connection_info().clone();
         let uri = req.uri().clone();
+        let req_headers = req.headers().clone();
 
         let query_string = req.query_string().to_owned();
         let kc_code = Extractor::query((&query_string, "code"));
@@ -68,6 +74,7 @@ where
                     conn_info,
                     app_data,
                     uri,
+                    headers: req_headers,
                 }
                 .into())
             });
@@ -89,6 +96,7 @@ where
                         token_response: None,
                         conn_info,
                         uri,
+                        headers: req_headers,
                     }
                     .into());
                 };
@@ -101,6 +109,7 @@ where
                         app_data: Some(app_data),
                         conn_info,
                         uri,
+                        headers: req_headers,
                     }
                     .into()),
                     None => fut.await,
@@ -117,7 +126,7 @@ where
                     let Ok(token) = app_data
                         .keycloak
                         .exchange_token(
-                            GrantType::RefreshToken(refresh_token.value().to_owned()),
+                            GrantType::RefreshToken(refresh_token.value()),
                             &redirect_uri,
                         )
                         .await
@@ -128,6 +137,7 @@ where
                             token_response: None,
                             conn_info,
                             uri,
+                            headers: req_headers,
                         }
                         .into());
                     };
@@ -140,6 +150,7 @@ where
                             app_data: Some(app_data),
                             conn_info,
                             uri,
+                            headers: req_headers,
                         }
                         .into()),
                         None => fut.await,
@@ -154,6 +165,7 @@ where
                     token_response: None,
                     conn_info,
                     uri,
+                    headers: req_headers,
                 }
                 .into())
             });
@@ -169,18 +181,23 @@ where
         }
 
         // The service call is not executed until the token is validated (at `fut.await`)
-        let fut = self.service.call(req);
 
         // Validate the access token and execute the service call
+        let srv = self.service.clone();
         Box::pin(async move {
             match app_data.keycloak.validate_token(access_token.value()).await {
-                Ok(_) => fut.await,
+                Ok(claims) => {
+                    req.extensions_mut().insert(claims);
+                    srv.call(req).await
+                }
                 Err(_) => Err(AuthenticationError {
-                    status: StatusCode::UNAUTHORIZED,
+                    // status: StatusCode::UNAUTHORIZED,
+                    status: StatusCode::INTERNAL_SERVER_ERROR,
                     app_data: Some(app_data),
                     token_response: None,
                     conn_info,
                     uri,
+                    headers: req_headers,
                 }
                 .into()),
             }
@@ -195,6 +212,7 @@ pub struct AuthenticationError {
     status: StatusCode,
     uri: Uri,
     token_response: Option<TokenResponse>,
+    headers: HeaderMap,
 }
 
 impl fmt::Display for AuthenticationError {
@@ -223,7 +241,7 @@ impl AuthenticationError {
             return HttpResponse::InternalServerError().finish();
         };
 
-        let Ok((id_cookie, access_cookie, refresh_cookie)) = CookieUtils::build_cookies(&tokens)
+        let Ok((id_cookie, access_cookie, refresh_cookie)) = cookies::from_token_response(&tokens)
         else {
             return HttpResponse::InternalServerError().finish();
         };
@@ -245,54 +263,24 @@ impl AuthenticationError {
         let host = self.conn_info.host();
         let uri = Extractor::uri(scheme, host, self.uri.path());
         let dest = data.keycloak.login_url(&uri);
+        let is_htmx = match self.headers.get("HX-Request") {
+            Some(header) => header == "true",
+            None => false,
+        };
 
-        HttpResponse::Found()
-            .append_header(("Location", dest))
+        // Prevents CORS issues with htmx and external redirects
+        let (status, header) = if is_htmx {
+            (StatusCode::OK, "HX-Redirect")
+        } else {
+            (StatusCode::FOUND, "LOCATION")
+        };
+
+        HttpResponse::build(status)
+            .insert_header((header, dest))
             .finish()
     }
 
     fn internal_server_error_response(&self) -> HttpResponse {
         HttpResponse::InternalServerError().finish()
-    }
-}
-
-struct CookieUtils;
-
-impl CookieUtils {
-    // Helper function
-    fn build_cookies(
-        token_response: &'_ TokenResponse,
-    ) -> Result<(Cookie<'_>, Cookie<'_>, Cookie<'_>), Box<dyn std::error::Error>> {
-        let is_test = std::env::var("RUST_ENV").unwrap_or_else(|_| "".to_string()) == "test";
-
-        let now = cookie::time::OffsetDateTime::now_utc().unix_timestamp();
-        let expires = cookie::time::OffsetDateTime::from_unix_timestamp(
-            now + token_response.expires_in() - 10,
-        )?; // 10 seconds before the token expires
-        let rf_expires =
-            cookie::time::OffsetDateTime::from_unix_timestamp(now + 60 * 60 * 24 * 180)?; // 180 days
-
-        let id_cookie = Cookie::build("id", token_response.id_token())
-            .path("/")
-            .secure(!is_test)
-            .http_only(true)
-            .expires(expires)
-            .finish();
-
-        let access_cookie = Cookie::build("ac", token_response.access_token())
-            .path("/")
-            .secure(!is_test)
-            .http_only(true)
-            .expires(expires)
-            .finish();
-
-        let refresh_cookie = Cookie::build("rf", token_response.refresh_token())
-            .path("/")
-            .secure(!is_test)
-            .http_only(true)
-            .expires(rf_expires)
-            .finish();
-
-        Ok((id_cookie, access_cookie, refresh_cookie))
     }
 }

@@ -1,5 +1,6 @@
+mod auth;
 mod index;
-mod logout;
+pub mod projects;
 
-pub use index::index;
-pub use logout::logout;
+pub use auth::*;
+pub use index::*;

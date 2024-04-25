@@ -6,6 +6,7 @@ const dev = process.env.DEV === 'true';
 
 export default {
     input: {
+        global: 'src/global.ts',
         main: 'src/main.ts',
         test: 'src/test.ts',
     },
@@ -29,5 +30,6 @@ export default {
             },
             mangle: { toplevel: true ,}
         })
-    ]
+    ],
+    external: ['htmx']
 };
