@@ -6,12 +6,11 @@ use std::{
 use actix_web::{
     body::EitherBody,
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
-    http::StatusCode,
     Error, HttpResponse,
 };
 use futures_util::future::LocalBoxFuture;
 
-use crate::utils::extractor::Extractor;
+use crate::utils::{extractor::Extractor, traits::Htmx};
 
 pub struct Authorization {
     pub admin: bool,
@@ -67,16 +66,9 @@ where
             }
         };
 
-        // Add the context to the request extensions
-        // req.extensions_mut().insert(context);
-
         let user = claims.clone();
         let admin = self.admin;
         let srv = self.service.clone();
-        let is_htmx = match req.headers().get("HX-Request") {
-            Some(header) => header == "true",
-            None => false,
-        };
 
         Box::pin(async move {
             let is_authorized = user.is_super_admin() || admin && user.is_admin(); // TODO: database check
@@ -87,12 +79,7 @@ where
             }
 
             let (request, _) = req.into_parts();
-
-            let (status, header) = if is_htmx {
-                (StatusCode::OK, "HX-Redirect")
-            } else {
-                (StatusCode::FOUND, "LOCATION")
-            };
+            let (status, header) = request.redirect_status_and_header();
 
             let response = HttpResponse::build(status)
                 .insert_header((header, "/"))

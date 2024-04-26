@@ -42,10 +42,10 @@ function test_pipeline() {
 
     EXIT_CODE=$(docker wait playwright)
     echo "Playwright tests exited with code $EXIT_CODE"
-    docker ps -a
 
-    # docker start playwright sh -c "tail -f /dev/null"
+    docker logs playwright
     docker cp playwright:/app/playwright-report/index.html $DIR/playwright-report/index.html
+    # docker cp playwright:/app/screenshots $DIR/screenshots
     docker rm playwright
 
     echo "EXIT_CODE: $EXIT_CODE"
@@ -63,7 +63,8 @@ function build() {
 
 function bt() {
     build
-    test
+    # test
+    test_pipeline
     docker rmi magicdocs_test_playwright:latest
 }
 

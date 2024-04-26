@@ -16,9 +16,8 @@ function browserSync() {
         sse.close();
         console.error = () => {};
         displaySpinner();
-        setTimeout(browserSync, 200);
+        setTimeout(browserSync, 500);
     }
-
 }
 
 let spinnerSvg = '';

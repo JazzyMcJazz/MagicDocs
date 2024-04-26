@@ -1,14 +1,22 @@
-use actix_web::{http::header::LOCATION, web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 
-use crate::{keycloak::GrantType, server::AppState, utils::cookies};
+use crate::{
+    keycloak::GrantType,
+    server::AppState,
+    utils::{cookies, traits::Htmx},
+};
 
 pub async fn logout(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
     let (cookie1, cookie2, cookie3) = cookies::expire();
-    let response = HttpResponse::Found()
+    let (status, header) = req.redirect_status_and_header();
+
+    dbg!(&status, &header);
+
+    let response = HttpResponse::build(status)
         .cookie(cookie1)
         .cookie(cookie2)
         .cookie(cookie3)
-        .insert_header((LOCATION, "/"))
+        .insert_header((header, "/"))
         .finish();
 
     let Some(refresh_token) = req.cookie("rf") else {

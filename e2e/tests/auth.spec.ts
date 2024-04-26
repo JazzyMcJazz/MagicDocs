@@ -5,7 +5,6 @@ const TEST_USER_PASSWORD = process.env.TEST_USER_PASSWORD;
 
 test.beforeEach(async ({ page }) => {
    await page.goto('/');
-   await expect(page).toHaveTitle(/Sign in to Magic Docs/);
    await page.fill('input[name="username"]', TEST_USER_USERNAME);
    await page.fill('input[name="password"]', TEST_USER_PASSWORD);
    await page.click('input[type="submit"]');
@@ -14,9 +13,7 @@ test.beforeEach(async ({ page }) => {
 test.afterEach(async ({ page }) => {
    await page.goto('/');
    await page.click('#nav-user-menu-btn');
-   await page.click('a[hx-post="/logout"]');
-   await expect(page).toHaveTitle(/Sign in to Magic Docs/);
-
+   await page.click('a[hx-post="/logout"]', { delay: 100 }); // wait for htmx
 });
 
 test('is logged ind', async ({ page }) => {

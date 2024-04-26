@@ -2,7 +2,8 @@
     <div class="flex gap-2 items-center justify-between px-2 h-full">
         <div>
             <a
-                href="/"
+                id="nav-logo"
+                href="/bob"
                 hx-get="/"
                 hx-target="body"
                 hx-push-url="true"
@@ -12,6 +13,7 @@
                 Magic Docs
             </a>
         </div>
+
         <p>Hello, {{ user.given_name }}</p>
 
         <div class="relative flex gap-8 items-center mr-2 h-full">

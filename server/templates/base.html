@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://unpkg.com/htmx.org@1.9.3" integrity="sha384-lVb3Rd/Ca0AxaoZg5sACe8FJKF0tnUgR2Kd7ehUOG5GCcROv5uBIZsOqovBAcWua" crossorigin="anonymous"></script>
+    <script src="/static/js/htmx.js"></script>
     <script src="https://unpkg.com/htmx.org/dist/ext/response-targets.js"></script>
     <script type="module" src="/static/js/global.js"></script>
-    <script type="module" src="/static/js/main.js"></script>
-    <script type="module" src="/static/js/test.js"></script>
     {% if env == 'dev' %}
         <script type="module" src="http://localhost:3000/static/js/browser-sync-client.js"></script>
     {% endif %}

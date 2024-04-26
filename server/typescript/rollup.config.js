@@ -6,9 +6,8 @@ const dev = process.env.DEV === 'true';
 
 export default {
     input: {
+        htmx: 'src/htmx.js',
         global: 'src/global.ts',
-        main: 'src/main.ts',
-        test: 'src/test.ts',
         'browser-sync-client': 'src/browser-sync-client.ts',
     },
     output: {
