@@ -22,6 +22,7 @@ lru = "0.12.3"
 jsonwebtoken = "9.3.0"
 actix-files = "0.6.5"
 async-stream = "0.3.5"
+anyhow = "1.0.82"
 
 [dev-dependencies]
 rstest = "0.19.0"

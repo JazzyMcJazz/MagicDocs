@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "codegen": "playwright codegen localhost:3000",
     "test": "playwright test",
     "test:ci": "CI=true playwright test"
   },

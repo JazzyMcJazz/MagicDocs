@@ -1,10 +1,11 @@
 use actix_web::cookie::{self, time::OffsetDateTime, Cookie};
+use anyhow::Result;
 
 use crate::keycloak::TokenResponse;
 
 pub fn from_token_response(
     token_response: &'_ TokenResponse,
-) -> Result<(Cookie<'_>, Cookie<'_>, Cookie<'_>), Box<dyn std::error::Error>> {
+) -> Result<(Cookie<'_>, Cookie<'_>, Cookie<'_>)> {
     let is_test = std::env::var("RUST_ENV").unwrap_or_else(|_| "".to_string()) == "test";
 
     let now = cookie::time::OffsetDateTime::now_utc().unix_timestamp();

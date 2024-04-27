@@ -10,7 +10,7 @@ use actix_web::{
 };
 use futures_util::future::LocalBoxFuture;
 
-use crate::utils::{extractor::Extractor, traits::Htmx};
+use crate::utils::extractor::Extractor;
 
 pub struct Authorization {
     pub admin: bool,
@@ -79,12 +79,8 @@ where
             }
 
             let (request, _) = req.into_parts();
-            let (status, header) = request.redirect_status_and_header();
 
-            let response = HttpResponse::build(status)
-                .insert_header((header, "/"))
-                .finish()
-                .map_into_right_body();
+            let response = HttpResponse::Forbidden().finish().map_into_right_body();
 
             Ok(ServiceResponse::new(request, response))
         })

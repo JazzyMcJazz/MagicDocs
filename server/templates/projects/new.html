@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title %}
-    <title>Magic Docs - Create Project</title>
+    <title>Magic Docs - New Project</title>
 {% endblock %}
 
 {% block main %}
@@ -19,7 +19,13 @@
                     <div class="px-2 w-10 h-full bg-[#202020] border-l-2 border-t-2 border-b-2 border-base rounded-l-sm">
                         {% include 'icons/title.svg' %}
                     </div>
-                    <input type="text" class="!rounded-l-none w-full" id="project-name" name="project-name" required>
+                    <input
+                        type="text"
+                        class="!rounded-l-none w-full"
+                        id="project-name"
+                        name="project-name"
+                        autocomplete="off"
+                        required>
                 </div>
 
                 <label for="description">Description</label>
@@ -28,14 +34,14 @@
                         {% include 'icons/pen.svg' %}
                     </div>
                     <textarea
-                        class="!rounded-l-none w-full min-h-11 max-h-96"
+                        class="!rounded-l-none w-full min-h-28 max-h-96"
                         id="description"
                         name="description"
-                        rows="4"
+                        autocomplete="off"
                     ></textarea>
                 </div>
 
-                <button type="submit" class="absolute bottom-8 button w-fit">Create Project</button>
+                <button type="submit" class="btn-primary absolute bottom-8 w-fit">Create Project</button>
             </form>
         </div>
     </div>

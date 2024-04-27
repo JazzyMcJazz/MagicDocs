@@ -51,7 +51,7 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(UserPermission::Table)
                     .if_not_exists()
-                    .col(ColumnDef::new(UserPermission::UserId).integer().not_null())
+                    .col(ColumnDef::new(UserPermission::UserId).string().not_null())
                     .col(ColumnDef::new(UserPermission::ProjectId).integer().not_null())
                     .col(
                         ColumnDef::new(UserPermission::Type)

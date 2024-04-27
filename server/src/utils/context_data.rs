@@ -4,6 +4,7 @@ use super::claims::Claims;
 
 #[derive(Debug, Serialize)]
 pub struct UserData {
+    pub id: String,
     pub email: String,
     pub name: String,
     pub preferred_username: String,
@@ -17,6 +18,7 @@ pub struct UserData {
 impl UserData {
     pub fn from_claims(claims: &Claims) -> Self {
         Self {
+            id: claims.get_sub(),
             email: claims.get_email(),
             name: claims.get_name(),
             preferred_username: claims.get_username(),

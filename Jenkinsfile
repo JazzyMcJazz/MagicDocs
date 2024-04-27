@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        SSH_TARGET = credentials('DEPLOY_SSH_TARGET')
+        SSH_TARGET = credentials('SSH_TARGET')
     }
 
     stages {
@@ -18,10 +18,16 @@ pipeline {
         }
         stage('Run E2E Tests') {
             environment {
-                PG_PASS = credentials('PG_PASS')
+                KEYCLOAK_ADMIN_USERNAME = credentials('KEYCLOAK_ADMIN_USERNAME')
                 KEYCLOAK_ADMIN_PASSWORD = credentials('KEYCLOAK_ADMIN_PASSWORD')
                 KEYCLOAK_CLIENT_SECRET = credentials('KEYCLOAK_CLIENT_SECRET')
-                TEST_USER_PASSWORD = credentials('TEST_USER_PASSWORD')
+                KEYCLOAK_TEST_USER_USERNAME = credentials('KEYCLOAK_TEST_USER_USERNAME')
+                KEYCLOAK_TEST_USER_PASSWORD = credentials('KEYCLOAK_TEST_USER_PASSWORD')
+                KEYCLOAK_TEST_ADMIN_USERNAME = credentials('KEYCLOAK_TEST_ADMIN_USERNAME')
+                KEYCLOAK_TEST_ADMIN_PASSWORD = credentials('KEYCLOAK_TEST_ADMIN_PASSWORD')
+                KEYCLOAK_TEST_SUPERADMIN_USERNAME = credentials('KEYCLOAK_TEST_SUPERADMIN_USERNAME')
+                KEYCLOAK_TEST_SUPERADMIN_PASSWORD = credentials('KEYCLOAK_TEST_SUPERADMIN_PASSWORD')
+
             }
             steps {
                 // Build the Playwright test image
@@ -83,7 +89,7 @@ pipeline {
                         -e DATABASE_URL=postgres://magicdocs:magicdocs@db:5432/magicdocs \
                         -e KEYCLOAK_INTERNAL_ADDR=https://kc.treeleaf.dev \
                         -e KEYCLOAK_EXTERNAL_ADDR=https://kc.treeleaf.dev \
-                        -e KEYCLOAK_USER=admin \
+                        -e KEYCLOAK_USER=$KEYCLOAK_ADMIN_USERNAME \
                         -e KEYCLOAK_PASSWORD=$KEYCLOAK_ADMIN_PASSWORD \
                         -e KEYCLOAK_REALM=magicdocs \
                         -e KEYCLOAK_CLIENT=magicdocs \
@@ -97,8 +103,12 @@ pipeline {
                     sh 'docker run -d --name magicdocs_test_playwright \
                         --network magicdocs_test_net \
                         -e HOST_URL=http://server:3000 \
-                        -e TEST_USER_USERNAME=tester \
-                        -e TEST_USER_PASSWORD=$TEST_USER_PASSWORD \
+                        -e KEYCLOAK_TEST_USER_USERNAME=$KEYCLOAK_TEST_USER_USERNAME \
+                        -e KEYCLOAK_TEST_USER_PASSWORD=$KEYCLOAK_TEST_USER_PASSWORD \
+                        -e KEYCLOAK_TEST_ADMIN_USERNAME=$KEYCLOAK_TEST_ADMIN_USERNAME \
+                        -e KEYCLOAK_TEST_ADMIN_PASSWORD=$KEYCLOAK_TEST_ADMIN_PASSWORD \
+                        -e KEYCLOAK_TEST_SUPERADMIN_USERNAME=$KEYCLOAK_TEST_SUPERADMIN_USERNAME \
+                        -e KEYCLOAK_TEST_SUPERADMIN_PASSWORD=$KEYCLOAK_TEST_SUPERADMIN_PASSWORD \
                         magicdocs_playwright:latest'
 
                     def exitCode = sh(script: 'docker wait magicdocs_test_playwright', returnStdout: true).trim().toInteger()
@@ -122,41 +132,12 @@ pipeline {
                             echo "Failed to archive Playwright test results - ${e.getMessage()}"
                         }
 
-                        try {
-                            sh 'docker rm -f magicdocs_test_playwright'
-                        } catch (Exception e) {
-                            echo "Failed to remove magicdocs_test_playwright - ${e.getMessage()}"
-                        }
-
-                        try {
-                            sh 'docker stop magicdocs_test_server'
-                        } catch (Exception e) {
-                            echo "Failed to stop magicdocs_test_server - ${e.getMessage()}"
-                        }
-
-                        try {
-                            sh 'docker stop magicdocs_test_db'
-                        } catch (Exception e) {
-                            echo "Failed to stop magicdocs_test_db - ${e.getMessage()}"
-                        }
-
-                        try {
-                            sh 'docker network rm magicdocs_test_net'
-                        } catch (Exception e) {
-                            echo "Failed to remove magicdocs_test_net - ${e.getMessage()}"
-                        }
-
-                        try {
-                            sh 'docker rmi magicdocs_playwright:latest'
-                        } catch (Exception e) {
-                            echo "Failed to remove magicdocs_playwright:latest - ${e.getMessage()}"
-                        }
-
-                        try {
-                            sh 'docker volume rm magicdocs_test_db'
-                        } catch (Exception e) {
-                            echo "Failed to remove magicdocs_test_db volume - ${e.getMessage()}"
-                        }
+                        sh 'docker rm -f magicdocs_test_playwright || true'
+                        sh 'docker stop magicdocs_test_server || true'
+                        sh 'docker stop magicdocs_test_db || true'
+                        sh 'docker network rm magicdocs_test_net || true'
+                        sh 'docker rmi magicdocs_playwright:latest || true'
+                        sh 'docker volume rm magicdocs_test_db || true'
                     }
                 }
             }
@@ -192,7 +173,7 @@ pipeline {
                             -a server \
                                 -i magicdocs:latest \
                                 -p 3000 \
-                                -e RUST_LOG=info \
+                                -e MY_LOG=info \
                                 -e RUST_BACKTRACE=0 \
                                 -e DATABASE_URL=postgres://magicdocs:\\$MD_DB_PASS@db:5432/magicdocs \
                                 -e KEYCLOAK_INTERNAL_ADDR=http://kc:8080 \
@@ -233,24 +214,8 @@ pipeline {
         always {
             echo 'Cleaning up local environment'
             script {
-                try {
-                    sh 'docker rmi pgvector:latest keycloak:latest magicdocs:latest'
-                } catch (Exception e) {
-                    echo "Failed to remove Docker images - ${e.getMessage()}"
-                }
-
-                try {
-                    sh 'docker network rm magicdocs_test_net'
-                } catch (Exception e) {
-                    echo "Failed to remove magicdocs_test_net - ${e.getMessage()}"
-                }
-
-                try {
-                    sh 'rm pgvector.tar keycloak.tar magicdocs.tar'
-                } catch (Exception e) {
-                    echo "Failed to remove Docker image tarballs - ${e.getMessage()}"
-                }
-
+                sh 'docker rmi pgvector:latest keycloak:latest magicdocs:latest || true'
+                sh 'rm pgvector.tar keycloak.tar magicdocs.tar || true'
                 sh 'docker image prune -f'
                 sh 'docker volume prune -f'
             }
@@ -258,11 +223,7 @@ pipeline {
             echo 'Cleaning up production server'
             withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'DeploymentTargetServer', keyFileVariable: 'SSH_KEY')]) {
                 script {
-                    try {
-                        sh 'ssh -i $SSH_KEY $SSH_TARGET \'rm pgvector.tar keycloak.tar magicdocs.tar\''
-                    } catch (Exception e) {
-                        echo "Failed to remove Docker image tarballs on production server - ${e.getMessage()}"
-                    }
+                    sh 'ssh -i $SSH_KEY $SSH_TARGET \'rm pgvector.tar keycloak.tar magicdocs.tar\' || true'
                 }
             }
         }

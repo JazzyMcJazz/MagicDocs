@@ -27,7 +27,7 @@ function start() {
         -p 3000:3000 \
         --network=magicdocs-net \
         -e RUST_ENV=test \
-        -e RUST_LOG=$RUST_LOG \
+        -e MY_LOG=$MY_LOG \
         -e RUST_BACKTRACE=$RUST_BACKTRACE \
         -e DATABASE_URL=postgres://magicdocs:magicdocs@magicdocs-db:5432/magicdocs \
         -e KEYCLOAK_INTERNAL_ADDR=$KEYCLOAK_INTERNAL_ADDR \
@@ -98,7 +98,7 @@ case $OP in
         run_tailwind
         ;;
     *)
-        echo "Usage: $0 {start|stop|restart|build}"
+        echo "Usage: $0 {start|stop|restart|build|generate|download_tailwind|install_tailwind|tailwind}"
         exit 1
         ;;
 esac

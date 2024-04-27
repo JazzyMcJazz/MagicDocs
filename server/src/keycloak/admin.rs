@@ -1,3 +1,4 @@
+use anyhow::{anyhow, bail, Result};
 use lru::LruCache;
 use std::{fmt, num::NonZeroUsize, sync::Arc};
 use tokio::sync::Mutex;
@@ -19,7 +20,7 @@ pub struct Keycloak {
 }
 
 impl Keycloak {
-    pub async fn new() -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn new() -> Result<Self> {
         let internal_base_url =
             std::env::var("KEYCLOAK_INTERNAL_ADDR").expect("KEYCLOAK_INTERNAL_ADDR must be set");
         let external_base_url =
@@ -51,7 +52,7 @@ impl Keycloak {
         &self,
         grant_type: GrantType<'_>,
         redirect_uri: &str,
-    ) -> Result<super::TokenResponse, Box<dyn std::error::Error>> {
+    ) -> Result<super::TokenResponse> {
         let client = reqwest::Client::new();
         let base_url = &self.internal_base_url;
         let realm_id = &self.realm_id;
@@ -74,14 +75,14 @@ impl Keycloak {
                     Ok(token)
                 } else {
                     dbg!(response.text().await?);
-                    Err("Failed to exchange code for token".into())
+                    bail!("Failed to exchange token")
                 }
             }
-            Err(e) => Err(e.into()),
+            Err(e) => bail!(e),
         }
     }
 
-    pub async fn validate_token(&self, token: &str) -> Result<Claims, Box<dyn std::error::Error>> {
+    pub async fn validate_token(&self, token: &str) -> Result<Claims> {
         let mut jwks = self.get_jwks().await?;
 
         let jwk = match jwks.match_kid(token) {
@@ -89,7 +90,9 @@ impl Keycloak {
             None => {
                 // If the token is not found in the JWKS, fetch the JWKS again and try to find the token
                 jwks = self.fetch_jwks().await?;
-                let jwk = jwks.match_kid(token).ok_or("No matching JWK found")?;
+                let jwk = jwks
+                    .match_kid(token)
+                    .ok_or(anyhow!("Token not found in JWKS"))?;
 
                 // Update the cache with the new JWKS if a matching JWK is found
                 self.jwk_cache
@@ -115,7 +118,7 @@ impl Keycloak {
         login_url
     }
 
-    pub async fn logout(&self, refresh_token: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn logout(&self, refresh_token: &str) -> Result<()> {
         let client = reqwest::Client::new();
         let base_url = &self.internal_base_url;
         let realm_id = &self.realm_id;
@@ -131,7 +134,7 @@ impl Keycloak {
         Ok(())
     }
 
-    async fn get_jwks(&self) -> Result<Jwks, Box<dyn std::error::Error>> {
+    async fn get_jwks(&self) -> Result<Jwks> {
         let mut cache = self.jwk_cache.lock().await;
 
         match cache.get_mut("c") {
@@ -156,7 +159,7 @@ impl Keycloak {
         }
     }
 
-    async fn fetch_jwks(&self) -> Result<Jwks, Box<dyn std::error::Error>> {
+    async fn fetch_jwks(&self) -> Result<Jwks> {
         let client = reqwest::Client::new();
         let base_url = &self.external_base_url;
         let realm_id = &self.realm_id;
@@ -171,12 +174,12 @@ impl Keycloak {
                     Ok(jwks)
                 } else {
                     dbg!(response.text().await?);
-                    Err("Failed to get JWKS".into())
+                    bail!("Failed to get JWKS")
                 }
             }
             Err(e) => {
                 dbg!(&e);
-                Err(e.into())
+                bail!(e)
             }
         }
     }

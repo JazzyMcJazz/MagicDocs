@@ -9,7 +9,7 @@ use migration::{
 use tera::Tera;
 use tracing::log;
 
-use crate::{keycloak::Keycloak, middleware, routes};
+use crate::{keycloak::Keycloak, middleware, routes, utils::tera_testers};
 
 #[derive(Debug, Clone)]
 pub struct AppState {
@@ -21,7 +21,7 @@ pub struct AppState {
 #[actix_web::main]
 pub async fn run() -> std::io::Result<()> {
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL in .env");
-    let log_level = env::var("RUST_LOG").unwrap_or_else(|_| "info".to_string());
+    let log_level = env::var("MY_LOG").unwrap_or_else(|_| "info".to_string());
     let rust_env = env::var("RUST_ENV").unwrap_or_else(|_| "prod".to_string());
 
     // Establish connection to the database
@@ -37,9 +37,10 @@ pub async fn run() -> std::io::Result<()> {
     Migrator::up(&conn, None).await.unwrap();
 
     // Initialize Tera template engine
-    let Ok(tera) = Tera::new("templates/**/*") else {
+    let Ok(mut tera) = Tera::new("templates/**/*") else {
         panic!("Failed to initialize Tera template engine");
     };
+    tera.register_tester("active_project", tera_testers::active_project);
 
     let keycloak = Keycloak::new().await.unwrap();
 
@@ -85,7 +86,7 @@ pub async fn run() -> std::io::Result<()> {
             )
             .service(
                 web::scope("")
-                    .wrap(middleware::ContextSetter) // 2
+                    .wrap(middleware::ContextBuilder) // 2
                     .wrap(middleware::Authentication) // 1
                     .configure(init),
             )
@@ -105,7 +106,9 @@ fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/projects")
             .wrap(middleware::Authorization { admin: true })
-            .route("/new", web::get().to(routes::projects::new)),
+            .route("/new", web::get().to(routes::projects::new))
+            .route("", web::post().to(routes::projects::list))
+            .route("/{id}", web::get().to(routes::projects::detail)),
     );
 
     cfg.service(

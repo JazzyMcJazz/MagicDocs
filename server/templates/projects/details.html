@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    <title>Magic Docs - {{ project.name }}</title>
+{% endblock %}
+
+{% block main %}
+    <div class="p-10">
+        <h1>{{ project.name }}</h1>
+        <p>{{ project.description }}</p>
+
+        <hr class="my-8"/>
+    </div>
+{% endblock %}

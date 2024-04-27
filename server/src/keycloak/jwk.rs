@@ -1,3 +1,4 @@
+use anyhow::Result;
 use jsonwebtoken::{Algorithm, DecodingKey, Validation};
 use serde::Deserialize;
 use std::str::FromStr;
@@ -34,7 +35,7 @@ pub struct Jwk {
 }
 
 impl Jwk {
-    pub fn validate(&self, token: &str) -> Result<Claims, Box<dyn std::error::Error>> {
+    pub fn validate(&self, token: &str) -> Result<Claims> {
         let decoding_key = DecodingKey::from_rsa_components(&self.n, &self.e)?;
         let alg = Algorithm::from_str(self.alg.as_str())?;
         let mut validation = Validation::new(alg);

@@ -22,7 +22,7 @@ pub struct Claims {
 #[derive(Debug, Clone, Deserialize)]
 #[allow(dead_code)]
 pub struct ResourceAccess {
-    magicdocs: Client,
+    magicdocs: Option<Client>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -33,7 +33,13 @@ pub struct Client {
 
 impl Claims {
     pub fn get_roles(&self) -> Vec<String> {
-        self.resource_access.magicdocs.roles.clone()
+        match self.resource_access.magicdocs {
+            Some(ref client) => client.roles.clone(),
+            None => vec![],
+        }
+    }
+    pub fn get_sub(&self) -> String {
+        self.sub.clone()
     }
     pub fn get_name(&self) -> String {
         self.name.clone()
@@ -51,16 +57,17 @@ impl Claims {
         self.family_name.clone()
     }
     pub fn is_admin(&self) -> bool {
-        self.resource_access
-            .magicdocs
-            .roles
-            .contains(&"admin".to_string())
-            || self.is_super_admin()
+        match self.resource_access.magicdocs {
+            Some(ref client) => {
+                client.roles.contains(&"admin".to_string()) || self.is_super_admin()
+            }
+            None => false,
+        }
     }
     pub fn is_super_admin(&self) -> bool {
-        self.resource_access
-            .magicdocs
-            .roles
-            .contains(&"super_admin".to_string())
+        match self.resource_access.magicdocs {
+            Some(ref client) => client.roles.contains(&"super_admin".to_string()),
+            None => false,
+        }
     }
 }

@@ -1,4 +1,5 @@
 use actix_web::HttpMessage;
+use anyhow::{bail, Result};
 use tera::Context;
 
 use super::claims::Claims;
@@ -20,11 +21,11 @@ impl Extractor {
         format!("{}://{}{}", scheme, host, uri)
     }
 
-    pub fn extract_claims(req: &impl HttpMessage) -> Result<Claims, ()> {
+    pub fn extract_claims(req: &impl HttpMessage) -> Result<Claims> {
         let ext = req.extensions();
         match ext.get::<Claims>() {
             Some(claims) => Ok(claims.clone()),
-            None => Err(()),
+            None => bail!("Claims not found in request"),
         }
     }
 

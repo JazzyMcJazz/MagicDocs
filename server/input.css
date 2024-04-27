@@ -73,10 +73,6 @@ nav a {
 	@apply text-gray-200 font-bold;
 }
 
-.button {
-	@apply text-stone-300 font-bold px-4 py-2 border-1 border-stone-300 rounded-sm hover:brightness-125;
-}
-
 .nav-user-menu-item {
 	@apply block px-4 py-2 hover:bg-neutral-200 text-black font-normal whitespace-nowrap cursor-pointer;
 }
@@ -97,4 +93,19 @@ nav a {
 
 .browser-sync-spinner {
 	@apply fixed bottom-4 right-2 z-50 w-12 h-12 animate-spin;
+}
+
+/* Buttons */
+.btn-primary {
+	@apply text-stone-300 font-bold px-4 py-2 border-1 border-stone-300 rounded-sm hover:brightness-125 text-center;
+}
+
+/* Sidebar */
+#sidebar a {
+	@apply flex items-center px-3 py-3 text-gray-200 font-bold border-l-4 border-transparent hover:bg-[#191919];
+	@apply text-nowrap overflow-hidden;
+}
+
+#sidebar .active-project {
+	@apply border-pink-600/90 bg-[#282828] hover:bg-[#282828];
 }

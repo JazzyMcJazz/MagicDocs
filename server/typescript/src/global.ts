@@ -1,5 +1,5 @@
 
-let userMenu: HTMLElement | null = null;
+let userMenu: Element | null = null;
 
 const clickOutside = (event: MouseEvent) => {
     if (userMenu && !userMenu.contains(event.target as Node)) {
@@ -10,9 +10,7 @@ const clickOutside = (event: MouseEvent) => {
 
 function toggleUserMenu() {
     if (!userMenu) return;
-
     const isHidden = userMenu.classList.toggle('hidden');
-
     if (isHidden) {
         document.removeEventListener('click', clickOutside);
     } else {
@@ -20,7 +18,18 @@ function toggleUserMenu() {
     }
 }
 
+function preventSamePage(e: CustomEvent<HtmxRequestEvent>) {
+    const { verb, path } = e.detail.requestConfig;
+    if (verb !== 'get') return;
+
+    const currentUrl = new URL(window.location.href);
+    if (path === currentUrl.pathname) {
+        e.preventDefault();
+    }
+}
+
 htmx.onLoad(() => {
-    document.getElementById('nav-user-menu-btn')?.addEventListener('click', toggleUserMenu);
-    userMenu = document.getElementById('nav-user-menu');
+    userMenu = htmx.find('#nav-user-menu');
+    htmx.find('#nav-user-menu-btn')?.addEventListener('click', toggleUserMenu);
+    htmx.find('body')?.addEventListener('htmx:beforeRequest', e => preventSamePage(e as CustomEvent<HtmxRequestEvent>));
 });

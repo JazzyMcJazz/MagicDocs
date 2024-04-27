@@ -435,6 +435,25 @@ interface HtmxConfig {
     ignoreTitle?: boolean;
 }
 
+type HtmxRequestEvent = {
+    boosted: boolean;
+    elt: Element;
+    etc: {};
+    pathInfo: {
+        anchor: undefined;
+        finalRequestPath: string;
+        requestPath: string;
+    }
+    requestConfig: {
+        boosted: boolean;
+        elt: Element;
+        errors: [];
+        headers: {};
+        path: string;
+        verb: string
+    },
+};
+
 type HtmxEvent = "htmx:abort"
     | "htmx:afterOnLoad"
     | "htmx:afterProcessNode"

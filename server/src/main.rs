@@ -4,6 +4,7 @@ use env_logger::Env;
 mod database;
 mod keycloak;
 mod middleware;
+mod models;
 mod routes;
 mod server;
 mod utils;
