@@ -54,7 +54,7 @@ where
     forward_ready!(service);
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        let claims = match Extractor::extract_claims(&req) {
+        let claims = match Extractor::claims(&req) {
             Ok(claims) => claims,
             Err(_) => {
                 let (request, _) = req.into_parts();

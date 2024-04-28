@@ -108,7 +108,12 @@ fn init(cfg: &mut web::ServiceConfig) {
             .wrap(middleware::Authorization { admin: true })
             .route("/new", web::get().to(routes::projects::new))
             .route("", web::post().to(routes::projects::list))
-            .route("/{id}", web::get().to(routes::projects::detail)),
+            .route("/{id}", web::get().to(routes::projects::detail))
+            .route("/{id}/documents/new", web::get().to(routes::document::new))
+            .route(
+                "/{id}/documents/{doc_id}",
+                web::get().to(routes::document::detail),
+            ),
     );
 
     cfg.service(

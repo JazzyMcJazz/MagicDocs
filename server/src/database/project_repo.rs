@@ -6,8 +6,7 @@ use entity::{
     user_permission,
 };
 use migration::sea_orm::{
-    entity::prelude::*, DatabaseConnection, DbBackend, EntityTrait, QueryFilter, QuerySelect,
-    QueryTrait, Set,
+    entity::prelude::*, DatabaseConnection, EntityTrait, QueryFilter, QuerySelect, QueryTrait, Set,
 };
 
 use crate::utils::context_data::UserData;
@@ -22,7 +21,6 @@ impl<'a> ProjectRepo<'a> {
     }
 
     pub async fn all(&self, user: &UserData) -> Result<Vec<Model>> {
-        dbg!(&user);
         if user.is_admin {
             Entity::find()
                 .all(self.0)
@@ -53,29 +51,13 @@ impl<'a> ProjectRepo<'a> {
                 )
                 .distinct();
 
-            dbg!(query.build(DbBackend::Postgres).to_string());
-
             let result = query.all(self.0).await?;
 
             Ok(result)
-
-            // let v1 = Value::from(user.id.clone());
-            // let v2 = Value::from(user.roles.clone());
-
-            // Entity::find()
-            //     .filter(user_permission::Column::UserId.eq(v1))
-            //     .left_join(user_permission::Entity)
-            //     .left_join(role_permission::Entity);
-
-            // let _result = self.0.execute(Statement::from_sql_and_values(
-            //     DbBackend::Postgres,
-            //     "SELECT * FROM get_accessible_projects($1, $2);",
-            //     IntoIterator::into_iter(vec![v1, v2])
-            // )).await?;
         }
     }
 
-    pub async fn find_by_id(&self, id: i32) -> Result<Option<Model>> {
+    pub async fn _find_by_id(&self, id: i32) -> Result<Option<Model>> {
         let res = Entity::find_by_id(id)
             .one(self.0)
             .await

@@ -1,8 +1,9 @@
 use actix_web::HttpMessage;
 use anyhow::{bail, Result};
+use entity::project;
 use tera::Context;
 
-use super::claims::Claims;
+use super::{claims::Claims, context_data::UserData};
 
 pub struct Extractor;
 
@@ -21,7 +22,7 @@ impl Extractor {
         format!("{}://{}{}", scheme, host, uri)
     }
 
-    pub fn extract_claims(req: &impl HttpMessage) -> Result<Claims> {
+    pub fn claims(req: &impl HttpMessage) -> Result<Claims> {
         let ext = req.extensions();
         match ext.get::<Claims>() {
             Some(claims) => Ok(claims.clone()),
@@ -29,23 +30,31 @@ impl Extractor {
         }
     }
 
-    pub fn extract_context(req: &impl HttpMessage) -> Context {
+    pub fn _user_data(req: &impl HttpMessage) -> Result<UserData> {
+        let ext = req.extensions();
+        match ext.get::<UserData>() {
+            Some(user_data) => Ok(user_data.clone()),
+            None => bail!("User data not found in request"),
+        }
+    }
+
+    pub fn context(req: &impl HttpMessage) -> Context {
         let ext = req.extensions();
         ext.get::<Context>().cloned().unwrap_or(Context::new())
     }
 
-    // pub fn unwrap_claims_and_context(req: &impl HttpMessage) -> (Claims, Context) {
-    //     let ext = req.extensions();
+    pub fn active_project(path: &str, projects: &[project::Model]) -> Option<project::Model> {
+        let parts = path.split('/').collect::<Vec<&str>>();
+        if parts.len() < 3 {
+            return None;
+        }
 
-    //     let claims = ext.get::<Claims>().cloned().unwrap();
-    //     let context = ext
-    //         .get::<Context>()
-    //         .cloned()
-    //         .unwrap_or(Context::new())
-    //         .to_owned();
+        let Ok(project_id) = parts[2].parse::<i32>() else {
+            return None;
+        };
 
-    //     (claims, context)
-    // }
+        projects.iter().find(|p| p.id == project_id).cloned()
+    }
 }
 
 #[cfg(test)]

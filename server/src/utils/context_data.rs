@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use super::claims::Claims;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 pub struct UserData {
     pub id: String,
     pub email: String,

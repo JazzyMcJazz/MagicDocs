@@ -6,7 +6,7 @@ use std::{
 use actix_web::{
     body::EitherBody,
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
-    web, Error, HttpMessage, HttpResponse,
+    web, Error, HttpMessage,
 };
 use futures_util::future::LocalBoxFuture;
 use tera::Context;
@@ -16,6 +16,8 @@ use crate::{
     server::AppState,
     utils::{context_data::UserData, extractor::Extractor},
 };
+
+use super::responses::ErrorResponse;
 
 pub struct ContextBuilder;
 
@@ -56,12 +58,12 @@ where
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let Some(app_data) = req.app_data::<web::Data<AppState>>().cloned() else {
-            let res = internal_server_error_response(req);
+            let res = ErrorResponse::InternalServerError.build(req);
             return Box::pin(async { Ok(res) });
         };
 
-        let Ok(claims) = Extractor::extract_claims(&req) else {
-            let res = internal_server_error_response(req);
+        let Ok(claims) = Extractor::claims(&req) else {
+            let res = ErrorResponse::InternalServerError.build(req);
             return Box::pin(async { Ok(res) });
         };
 
@@ -76,24 +78,19 @@ where
                 Err(_) => Vec::new(),
             };
 
+            let active_project = Extractor::active_project(req.path(), &projects);
+
             let mut context = Context::new();
             context.insert("path", req.path());
             context.insert("user", &user_data);
             context.insert("env", &env);
             context.insert("projects", &projects);
+            context.insert("project", &active_project);
 
             req.extensions_mut().insert(context);
+            req.extensions_mut().insert(user_data);
             let fut = srv.call(req).await;
             fut.map(ServiceResponse::map_into_left_body)
         })
     }
-}
-
-fn internal_server_error_response<B>(req: ServiceRequest) -> ServiceResponse<EitherBody<B>> {
-    let (request, _) = req.into_parts();
-    let response = HttpResponse::InternalServerError()
-        .finish()
-        .map_into_right_body();
-
-    ServiceResponse::new(request, response)
 }

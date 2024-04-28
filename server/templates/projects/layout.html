@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    <title>Magic Docs - {{ project.name }}</title>
+{% endblock %}
+
+{% block main %}
+    <div class="flex min-h-[calc(100dvh-3.5rem)]">
+
+        <div class="w-48 bg-[#181818] border-r-1 border-base">
+            <!-- <select class="block w-full px-4 h-[75px] font-bold bg-[#181818] border-0 border-b-1 border-base" onchange="window.location.href = this.value">
+                {% for i in [1,2,3] %}
+                    <option value="/projects/{{ project.id }}/v/{{ i }}">Version {{ i }}</option>
+                {% endfor %}
+            </select> -->
+
+            <div class="flex justify-center w-full p-4 border-b-1 border-base">
+                <a href="/projects/{{ project.id }}/documents/new" class="btn-primary">
+                    New Document
+                </a>
+            </div>
+
+            {% for i in [1,2,3,4,5] %}
+                <a href="/projects/{{ project.id }}/documents/{{ i }}" class="block p-4 text-white hover:bg-[#333]">Document {{ i }}</a>
+            {% endfor %}
+        </div>
+
+        {% block content %}{% endblock %}
+    </div>
+{% endblock %}
