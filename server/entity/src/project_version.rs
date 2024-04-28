@@ -11,7 +11,7 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub project_id: i32,
     #[sea_orm(primary_key, auto_increment = false)]
-    pub version: String,
+    pub version: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

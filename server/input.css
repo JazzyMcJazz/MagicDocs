@@ -77,20 +77,6 @@ nav a {
 	@apply block px-4 py-2 hover:bg-neutral-200 text-black font-normal whitespace-nowrap cursor-pointer;
 }
 
-.tab {
-	@apply flex items-center h-full border-b-1 border-r-1 border-base hover:bg-[#282828];
-}
-
-.tab a {
-	@apply text-gray-200 font-bold flex justify-center items-center h-full px-4 min-w-32;
-}
-
-.active-tab {
-	@apply !border-b-0;
-	/* @apply bg-[#282828] hover:bg-[#282828]; */
-	@apply bg-gradient-to-t from-[#282828] to-[#101010];
-}
-
 .browser-sync-spinner {
 	@apply fixed bottom-4 right-2 z-50 w-12 h-12 animate-spin;
 }
@@ -108,4 +94,26 @@ nav a {
 
 #sidebar .active-project {
 	@apply border-pink-600/90 bg-[#282828] hover:bg-[#282828];
+}
+
+.tab {
+	@apply flex items-center h-full border-b-1 border-r-1 border-base hover:bg-[#282828];
+}
+
+.tab a {
+	@apply text-gray-200 font-bold flex justify-center items-center h-full px-4 min-w-32;
+}
+
+.active-tab {
+	@apply !border-b-0;
+	/* @apply bg-[#282828] hover:bg-[#282828]; */
+	@apply bg-gradient-to-t from-[#282828] to-[#101010];
+}
+
+.editor-tab {
+	@apply flex w-32 h-3/5 justify-center items-center bg-[#101010] rounded-t-lg text-gray-200;
+}
+
+.active-editor-tab {
+	@apply bg-[#282828] cursor-default;
 }

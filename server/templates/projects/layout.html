@@ -15,7 +15,7 @@
             </select> -->
 
             <div class="flex justify-center w-full p-4 border-b-1 border-base">
-                <a href="/projects/{{ project.id }}/documents/new" class="btn-primary">
+                <a href="/projects/{{ project.id }}/documents/editor" class="btn-primary">
                     New Document
                 </a>
             </div>
@@ -25,6 +25,8 @@
             {% endfor %}
         </div>
 
-        {% block content %}{% endblock %}
+        <div class="flex-grow">
+            {% block content %}{% endblock %}
+        </div>
     </div>
 {% endblock %}

@@ -118,7 +118,7 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(ColumnDef::new(ProjectVersion::Id).integer().unique_key().auto_increment().not_null())
                     .col(ColumnDef::new(ProjectVersion::ProjectId).integer().not_null())
-                    .col(ColumnDef::new(ProjectVersion::Version).string().not_null())
+                    .col(ColumnDef::new(ProjectVersion::Version).integer().not_null())
                     .primary_key(
                         Index::create()
                             .col(ProjectVersion::ProjectId)

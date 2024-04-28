@@ -16,7 +16,13 @@ pub async fn new(data: Data<AppState>, req: HttpRequest) -> HttpResponse {
     let context = Extractor::context(&req);
     let tera = &data.tera;
 
-    let Ok(html) = tera.render("projects/documents/new.html", &context) else {
+    let file = if req.path().ends_with("/crawler") {
+        "projects/documents/new/crawler.html"
+    } else {
+        "projects/documents/new/editor.html"
+    };
+
+    let Ok(html) = tera.render(file, &context) else {
         return HttpResponse::InternalServerError().body("Template error");
     };
 

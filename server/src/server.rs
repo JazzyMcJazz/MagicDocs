@@ -109,7 +109,14 @@ fn init(cfg: &mut web::ServiceConfig) {
             .route("/new", web::get().to(routes::projects::new))
             .route("", web::post().to(routes::projects::list))
             .route("/{id}", web::get().to(routes::projects::detail))
-            .route("/{id}/documents/new", web::get().to(routes::document::new))
+            .route(
+                "/{id}/documents/editor",
+                web::get().to(routes::document::new),
+            )
+            .route(
+                "/{id}/documents/crawler",
+                web::get().to(routes::document::new),
+            )
             .route(
                 "/{id}/documents/{doc_id}",
                 web::get().to(routes::document::detail),
