@@ -7,16 +7,20 @@
 }
 
 ::-webkit-scrollbar-track {
-	@apply bg-transparent bg-opacity-0 opacity-0 bg-clip-content;
+	@apply bg-[#080808]  bg-clip-content absolute;
 	@apply border-l-4 border-r-4;
 }
 
 ::-webkit-scrollbar-thumb {
-	@apply bg-gray-800 mx-2 rounded-full;
+	@apply bg-[#404040] mx-2 rounded-full;
 }
 
 ::-webkit-scrollbar-corner {
 	@apply hidden;
+}
+
+html {
+	@apply overflow-y-hidden;
 }
 
 h1 {
@@ -50,7 +54,6 @@ form input[type=text], form textarea {
 
 body {
 	@apply bg-[#282828] text-white;
-	scrollbar-gutter: stable both-edges;
 }
 
 header {
@@ -116,4 +119,44 @@ nav a {
 
 .active-editor-tab {
 	@apply bg-[#282828] cursor-default;
+}
+
+.editor-toolbar {
+	@apply border-base opacity-90 hover:border-base hover:opacity-90 bg-[#181818];
+}
+
+.editor-toolbar a {
+	@apply !text-gray-200 hover:bg-[#282828];
+}
+
+.editor-toolbar a.active {
+	@apply bg-[#282828];
+}
+
+.CodeMirror {
+	@apply border-base;
+}
+
+.CodeMirror, .CodeMirror-scroll {
+	@apply bg-[#181818] text-gray-200;
+}
+
+.CodeMirror-cursor {
+	@apply !border-l-gray-200;
+}
+
+.CodeMirror .editor-preview {
+	@apply !bg-[#181818] !text-gray-200;
+}
+
+.editor-toolbar.disabled-for-preview a:not(.no-disable) {
+	@apply !bg-[#181818] !text-gray-200/50 cursor-not-allowed;
+}
+
+.CodeMirror ::selection {
+	@apply bg-[#282828];
+}
+
+.CodeMirror-selected {
+	@apply !bg-blue-900;
 }

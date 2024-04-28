@@ -5,9 +5,9 @@
 {% endblock %}
 
 {% block main %}
-    <div class="flex min-h-[calc(100dvh-3.5rem)]">
+    <div class="relative h-[calc(100dvh-3.5rem)] overflow-y-scroll">
 
-        <div class="w-48 bg-[#181818] border-r-1 border-base">
+        <div class="fixed w-48 h-[calc(100dvh-3.5rem)] bg-[#181818] border-r-1 border-base">
             <!-- <select class="block w-full px-4 h-[75px] font-bold bg-[#181818] border-0 border-b-1 border-base" onchange="window.location.href = this.value">
                 {% for i in [1,2,3] %}
                     <option value="/projects/{{ project.id }}/v/{{ i }}">Version {{ i }}</option>
@@ -25,7 +25,7 @@
             {% endfor %}
         </div>
 
-        <div class="flex-grow">
+        <div class="flex-grow float-end w-[calc(100dvw-25rem)]">
             {% block content %}{% endblock %}
         </div>
     </div>

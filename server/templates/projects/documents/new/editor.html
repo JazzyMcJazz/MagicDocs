@@ -1,7 +1,13 @@
 {% extends 'projects/documents/new/layout.html' %}
 
+{% block scripts %}
+    <link rel="stylesheet" href="/static/css/simplemde.css">
+    <script src="/static/js/simplemde.js"></script>
+    <script type="module" src="/static/js/editor.js"></script>
+{% endblock %}
+
 {% block tab %}
-    <div class="flex-grow flex flex-col gap-4 p-8 h-[calc(100dvh-3.5rem)]">
+    <div class="flex-grow flex flex-col gap-4 p-8">
         {% if document %}
             <h1 class="text-2xl font-bold text-white">{{ document.title }}</h1>
         {% else %}
@@ -10,10 +16,15 @@
 
         <input type="text" class="w-full p-4 text-white bg-[#181818] border-2 focus:ring-0 focus:border-pink-500/50" placeholder="Document Title"/>
 
-        <textarea
+        <div>
+            <textarea id="editor" class="hidden"></textarea>
+        </div>
+
+
+        <!-- <textarea
             class="w-full h-full p-10 text-white bg-[#181818] border-2 focus:ring-0 focus:border-pink-500/50"
             placeholder="Start typing..."
             style="resize: none;"
-        ></textarea>
+        ></textarea> -->
     </div>
 {% endblock %}

@@ -7,16 +7,18 @@
   "scripts": {
     "build:dev": "DEV=true rollup -c",
     "build": "rollup -c",
-    "dev": "rollup -c -w",
+    "dev": "DEV=true rollup -c -w",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^11.1.6",
+    "@types/simplemde": "^1.11.11",
     "rollup": "^4.16.4",
     "typescript": "^5.4.5"
   },
