@@ -9,7 +9,6 @@ export default {
         htmx: 'src/htmx.js',
         global: 'src/global.ts',
         editor: 'src/editor.ts',
-        simplemde: 'src/simplemde.js',
         'browser-sync-client': 'src/browser-sync-client.ts',
     },
     output: {

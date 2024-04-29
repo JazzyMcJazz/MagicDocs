@@ -1,18 +1,50 @@
+import { EditorState } from "@codemirror/state";
+import { EditorView, drawSelection, dropCursor, keymap } from "@codemirror/view";
+import { markdown, markdownKeymap } from '@codemirror/lang-markdown';
+import { closeBracketsKeymap, completionKeymap } from "@codemirror/autocomplete";
+import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
+import { searchKeymap } from "@codemirror/search";
+import { foldKeymap, indentOnInput } from "@codemirror/language";
+import { lintKeymap } from "@codemirror/lint";
+import { customKeymap } from "./lib/keybinds";
+
+const parent = document.getElementById("editor") as HTMLDivElement;
+const textarea = document.getElementById("textarea") as HTMLTextAreaElement;
+
+const changeListener = EditorView.updateListener.of((update) => {
+    if (update.docChanged) {
+        textarea.value = update.state.doc.toString();
+    }
+});
+
+const extensions = [
+    history(),
+    drawSelection(),
+    dropCursor(),
+    indentOnInput(),
+    changeListener,
+    keymap.of([
+        indentWithTab,
+        ...customKeymap,
+        ...closeBracketsKeymap,
+        ...defaultKeymap,
+        ...searchKeymap,
+        ...historyKeymap,
+        ...foldKeymap,
+        ...completionKeymap,
+        ...lintKeymap,
+        ...markdownKeymap,
+    ]),
+    markdown(),
+];
+
+const state = EditorState.create({
+    doc: "",
+    extensions,
+});
 
 function load() {
-    new SimpleMDE({
-        element: document.getElementById("editor") || undefined,
-        toolbar: ['bold', 'italic', 'heading', '|', 'unordered-list', 'ordered-list', '|', 'link', 'image', '|', 'preview'],
-        tabSize: 4,
-        status: false,
-        spellChecker: false,
-        forceSync: true,
-        shortcuts: {
-            toggleFullScreen: '',
-            toggleSideBySide: '',
-            togglePreview: '',
-        },
-    });
+    new EditorView({ parent, state });
 }
 
 htmx.onLoad(load);

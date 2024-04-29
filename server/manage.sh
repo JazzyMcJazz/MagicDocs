@@ -94,7 +94,7 @@ case $OP in
     install_tailwind)
         install_tailwind
         ;;
-    tailwind)
+    tw|tailwind)
         run_tailwind
         ;;
     *)

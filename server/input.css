@@ -121,42 +121,19 @@ nav a {
 	@apply bg-[#282828] cursor-default;
 }
 
-.editor-toolbar {
-	@apply border-base opacity-90 hover:border-base hover:opacity-90 bg-[#181818];
+.cm-editor {
+	@apply w-full p-4 min-h-48 text-white bg-[#181818] border-2 border-base;
+	@apply cursor-text;
 }
 
-.editor-toolbar a {
-	@apply !text-gray-200 hover:bg-[#282828];
+.cm-focused {
+	@apply !outline-none border-pink-500/50;
 }
 
-.editor-toolbar a.active {
-	@apply bg-[#282828];
+.ͼ1 .cm-cursor, .ͼ1 .cm-dropCursor, .ͼ1 .cm-cursor-primary {
+	@apply border-l-[1.5px] border-l-gray-200
 }
 
-.CodeMirror {
-	@apply border-base;
-}
-
-.CodeMirror, .CodeMirror-scroll {
-	@apply bg-[#181818] text-gray-200;
-}
-
-.CodeMirror-cursor {
-	@apply !border-l-gray-200;
-}
-
-.CodeMirror .editor-preview {
-	@apply !bg-[#181818] !text-gray-200;
-}
-
-.editor-toolbar.disabled-for-preview a:not(.no-disable) {
-	@apply !bg-[#181818] !text-gray-200/50 cursor-not-allowed;
-}
-
-.CodeMirror ::selection {
-	@apply bg-[#282828];
-}
-
-.CodeMirror-selected {
-	@apply !bg-blue-900;
+.cm-selectionBackground {
+	@apply !bg-[#256ab0] py-1;
 }
