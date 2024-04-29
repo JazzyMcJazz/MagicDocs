@@ -116,14 +116,10 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(ProjectVersion::Table)
                     .if_not_exists()
-                    .col(ColumnDef::new(ProjectVersion::Id).integer().unique_key().auto_increment().not_null())
+                    .col(ColumnDef::new(ProjectVersion::Id).integer().primary_key().auto_increment().not_null())
                     .col(ColumnDef::new(ProjectVersion::ProjectId).integer().not_null())
-                    .col(ColumnDef::new(ProjectVersion::Version).integer().not_null())
-                    .primary_key(
-                        Index::create()
-                            .col(ProjectVersion::ProjectId)
-                            .col(ProjectVersion::Version)
-                    )
+                    .col(ColumnDef::new(ProjectVersion::Published).boolean().not_null().default(false))
+                    .col(ColumnDef::new(ProjectVersion::CreatedAt).date_time().not_null().default(CURRENT_TIMESTAMP))
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_project_versions_project_id")
@@ -255,7 +251,8 @@ enum ProjectVersion {
     Table,
     Id,
     ProjectId,
-    Version,
+    CreatedAt,
+    Published,
 }
 
 #[derive(DeriveIden)]

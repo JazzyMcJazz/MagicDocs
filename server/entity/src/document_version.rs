@@ -44,17 +44,4 @@ impl Related<super::project_version::Entity> for Entity {
     }
 }
 
-impl Related<super::project::Entity> for Entity {
-    fn to() -> RelationDef {
-        super::project_version::Relation::Project.def()
-    }
-    fn via() -> Option<RelationDef> {
-        Some(
-            super::project_version::Relation::DocumentVersion
-                .def()
-                .rev(),
-        )
-    }
-}
-
 impl ActiveModelBehavior for ActiveModel {}

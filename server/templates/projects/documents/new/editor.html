@@ -1,8 +1,6 @@
 {% extends 'projects/documents/new/layout.html' %}
 
 {% block scripts %}
-    <!-- <link rel="stylesheet" href="/static/css/simplemde.css"> -->
-    <!-- <script src="/static/js/simplemde.js"></script> -->
     <script type="module" src="/static/js/editor.js"></script>
 {% endblock %}
 
@@ -23,7 +21,7 @@
                 required
             />
 
-            <textarea name="content" id="textarea" class="hidden" disabled></textarea>
+            <textarea name="content" id="textarea" class="hidden"></textarea>
         </form>
 
         <div id="editor"></div>

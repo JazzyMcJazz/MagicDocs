@@ -11,8 +11,6 @@ use migration::sea_orm::{
 
 use crate::utils::context_data::UserData;
 
-pub type CreateProjectData = (String, String);
-
 pub struct ProjectRepo<'a>(&'a DatabaseConnection);
 
 impl<'a> ProjectRepo<'a> {
@@ -66,7 +64,7 @@ impl<'a> ProjectRepo<'a> {
         Ok(res)
     }
 
-    pub async fn create(&self, (name, description): CreateProjectData) -> Result<i32> {
+    pub async fn create(&self, name: String, description: String) -> Result<i32> {
         let model = ActiveModel {
             name: Set(name),
             description: Set(description),

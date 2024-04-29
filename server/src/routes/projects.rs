@@ -32,7 +32,7 @@ pub async fn list(
 
     let Ok(id) = db
         .projects()
-        .create((project_data.name, project_data.description))
+        .create(project_data.name, project_data.description)
         .await
     else {
         return HttpResponse::InternalServerError().finish();
