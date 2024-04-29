@@ -1,6 +1,17 @@
 use anyhow::Result;
-use entity::document::{ActiveModel, Entity};
-use migration::sea_orm::{DatabaseConnection, EntityTrait, Set, TransactionTrait};
+use entity::{
+    document::{ActiveModel, Column, Entity, Model, Relation},
+    document_version, project_version,
+};
+use migration::{
+    sea_orm::{
+        prelude::*, DatabaseConnection, EntityTrait, QueryFilter, QuerySelect, Set,
+        TransactionTrait,
+    },
+    JoinType,
+};
+
+use crate::models::DocumentWithIdAndName;
 
 use super::Repo;
 
@@ -11,9 +22,34 @@ impl<'a> DocumentRepo<'a> {
         Self(db)
     }
 
-    pub async fn find_by_id(&self, _id: i32) -> Result<Option<()>> {
-        let _ = self.0;
-        Ok(Some(()))
+    pub async fn all_only_id_and_column(
+        &self,
+        project_id: i32,
+    ) -> Result<Vec<DocumentWithIdAndName>> {
+        let version_id = 1;
+
+        let res = Entity::find()
+            .select_only()
+            .column(Column::Id)
+            .column(Column::Name)
+            .join(JoinType::InnerJoin, Relation::DocumentVersion.def())
+            .join(
+                JoinType::InnerJoin,
+                document_version::Relation::ProjectVersion.def(),
+            )
+            .filter(project_version::Column::ProjectId.eq(project_id))
+            .filter(project_version::Column::Id.eq(version_id))
+            .into_model::<DocumentWithIdAndName>()
+            .all(self.0)
+            .await?;
+
+        Ok(res)
+    }
+
+    pub async fn find_by_id(&self, id: i32) -> Result<Option<Model>> {
+        let res = Entity::find().filter(Column::Id.eq(id)).one(self.0).await?;
+
+        Ok(res)
     }
 
     pub async fn create(&self, project_id: i32, name: String, content: String) -> Result<i32> {

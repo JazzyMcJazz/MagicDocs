@@ -7,6 +7,7 @@ use serde::Deserialize;
 use crate::{
     database::Repo,
     models::CreateDocumentForm,
+    parsing::Markdown,
     server::AppState,
     utils::{extractor::Extractor, traits::Htmx},
 };
@@ -59,7 +60,6 @@ pub async fn list(
 
 #[derive(Deserialize)]
 pub struct DocumentPathInfo {
-    id: i32,
     doc_id: i32,
 }
 
@@ -69,21 +69,22 @@ pub async fn detail(
     info: Path<DocumentPathInfo>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let context = Extractor::context(&req);
+    let mut context = Extractor::context(&req);
     let tera = &data.tera;
     let db = &data.conn;
     let path = info.into_inner();
-    dbg!(path.id, path.doc_id);
 
-    let Ok(_) = db.documents().find_by_id(path.id).await else {
+    let Ok(document) = db.documents().find_by_id(path.doc_id).await else {
         return HttpResponse::InternalServerError().finish();
     };
 
-    // let Some(project) = res else {
-    //     return HttpResponse::NotFound().finish();
-    // };
+    let mut document = match document {
+        Some(doc) => doc,
+        None => return HttpResponse::NotFound().finish(),
+    };
 
-    // context.insert("project", &project);
+    document.content = Markdown.to_html(&document.content);
+    context.insert("document", &document);
 
     let Ok(html) = tera.render("projects/documents/details.html", &context) else {
         return HttpResponse::InternalServerError().body("Template error");

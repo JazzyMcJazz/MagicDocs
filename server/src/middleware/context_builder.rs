@@ -80,12 +80,24 @@ where
 
             let active_project = Extractor::active_project(req.path(), &projects);
 
+            let documents = match &active_project {
+                Some(project) => match db.documents().all_only_id_and_column(project.id).await {
+                    Ok(documents) => Some(documents),
+                    Err(e) => {
+                        dbg!(e);
+                        None
+                    }
+                },
+                None => None,
+            };
+
             let mut context = Context::new();
             context.insert("path", req.path());
             context.insert("user", &user_data);
             context.insert("env", &env);
             context.insert("projects", &projects);
             context.insert("project", &active_project);
+            context.insert("documents", &documents);
 
             req.extensions_mut().insert(context);
             req.extensions_mut().insert(user_data);

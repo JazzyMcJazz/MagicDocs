@@ -5,6 +5,7 @@ mod database;
 mod keycloak;
 mod middleware;
 mod models;
+mod parsing;
 mod routes;
 mod server;
 mod utils;

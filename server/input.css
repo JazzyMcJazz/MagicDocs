@@ -137,3 +137,11 @@ nav a {
 .cm-selectionBackground {
 	@apply !bg-[#256ab0] py-1;
 }
+
+#document-content h1, #document-content h2, #document-content h3, #document-content p {
+	@apply my-4
+}
+
+#document-content pre {
+	@apply !bg-[#141414] p-4 rounded-md overflow-x-auto;
+}
