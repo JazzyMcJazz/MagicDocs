@@ -126,6 +126,10 @@ nav a {
 	@apply cursor-text;
 }
 
+.cm-scroller, .cm-content {
+	@apply !min-h-48;
+}
+
 .cm-focused {
 	@apply !outline-none border-pink-500/50;
 }

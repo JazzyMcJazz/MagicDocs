@@ -26,7 +26,7 @@ impl<'a> DocumentRepo<'a> {
         &self,
         project_id: i32,
     ) -> Result<Vec<DocumentWithIdAndName>> {
-        let version_id = 1;
+        // let version_id = 1;
 
         let res = Entity::find()
             .select_only()
@@ -38,7 +38,7 @@ impl<'a> DocumentRepo<'a> {
                 document_version::Relation::ProjectVersion.def(),
             )
             .filter(project_version::Column::ProjectId.eq(project_id))
-            .filter(project_version::Column::Id.eq(version_id))
+            // .filter(project_version::Column::Id.eq(version_id))
             .into_model::<DocumentWithIdAndName>()
             .all(self.0)
             .await?;

@@ -4,24 +4,21 @@ let displayingSpinner = false;
 function browserSync() {
     const sse = new EventSource('/browser-sync');
 
-    sse.onopen = () => {
+    const onopen = () => {
         if (init) {
-            location.reload();
+            window.location.reload();
         } else {
             init = true;
         }
     }
 
+    sse.onopen = onopen;
+
     sse.onerror = () => {
         sse.close();
-        console.error = () => {};
         displaySpinner();
         setTimeout(browserSync, 500);
     }
-}
-
-let spinnerSvg = '';
-async function setSpinnerSvg() {
 }
 
 function displaySpinner() {

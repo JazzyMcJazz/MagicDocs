@@ -12,18 +12,23 @@
             <h1 class="text-2xl font-bold text-white">New Document</h1>
         {% endif %}
         <form action="/projects/{{ project.id }}/documents" method="POST">
-            <button type="submit" class="absolute top-8 right-8 btn-primary w-fit bg-green-900">Save</button>
-            <input
-                type="text"
-                class="w-full mt-4 p-4 text-white bg-[#181818] border-2 focus:ring-0 focus:border-pink-500/50"
-                placeholder="Document Title"
-                name="title"
-                required
-            />
+            <div>
+                <label for="document-title" class="text-white mt-8 ml-1 font-bold">Title</label>
+                <input
+                    id="document-title"
+                    type="text"
+                    class="w-full p-4 mb-8 text-white bg-[#181818] border-2 focus:ring-0 focus:border-pink-500/50"
+                    placeholder="Document Title"
+                    name="title"
+                    required
+                />
 
-            <textarea name="content" id="textarea" class="hidden"></textarea>
+                <label for="textarea" class="text-white mt-8 ml-1 font-bold">Content</label>
+                <div id="editor" data-testid="editor"></div>
+
+                <textarea name="content" id="textarea" class="hidden"></textarea>
+                <button type="submit" class="absolute top-8 right-8 btn-primary w-fit bg-green-900">Save</button>
+            </div>
         </form>
-
-        <div id="editor"></div>
     </div>
 {% endblock %}
