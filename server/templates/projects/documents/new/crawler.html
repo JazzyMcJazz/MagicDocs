@@ -2,6 +2,31 @@
 
 {% block tab %}
     <div class="flex-grow flex flex-col gap-4 p-8 h-[calc(100dvh-3.5rem)]">
-        Crawler Bob
+        <form method="POST" action="/projects/{{ project.id }}/documents/crawler">
+            <div class="flex flex-col">
+                <div>
+                    <input type="radio" name="pages" id="single" value="Single" checked>
+                    <label for="single">Single</label>
+                </div>
+                <div>
+                    <input type="radio" name="pages" id="multiple" value="Multiple">
+                    <label for="multiple">Multiple</label>
+                </div>
+
+            </div>
+
+            <div class="flex flex-col gap-4">
+                <label for="url" class="text-lg">URL</label>
+                <input
+                    type="text"
+                    name="url"
+                    id="url"
+                    class="p-2 border border-gray-300 rounded-md"
+                    value="https://surrealdb.com/docs/surrealdb"
+                    required
+                >
+            </div>
+
+            <input type="submit" value="Start" class="btn-primary w-fit">
     </div>
 {% endblock %}

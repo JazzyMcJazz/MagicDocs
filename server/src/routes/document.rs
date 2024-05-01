@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::{
     database::Repo,
-    models::CreateDocumentForm,
+    models::{CreateDocumentForm, StartCrawlerForm},
     parsing::Markdown,
     server::AppState,
     utils::{extractor::Extractor, traits::Htmx},
@@ -29,7 +29,7 @@ pub async fn new(data: Data<AppState>, req: HttpRequest) -> HttpResponse {
     HttpResponse::Ok().body(html)
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct ProjectPathInfo {
     id: i32,
 }
@@ -55,6 +55,24 @@ pub async fn list(
     let (status, header) = req.redirect_status_and_header();
     HttpResponse::build(status)
         .insert_header((header, format!("/projects/{}/documents/{}", path.id, id)))
+        .finish()
+}
+
+pub async fn crawler(
+    data: Data<AppState>,
+    form: Form<StartCrawlerForm>,
+    info: Path<ProjectPathInfo>,
+    req: HttpRequest,
+) -> HttpResponse {
+    let _db = &data.conn;
+    let path = info.into_inner();
+    let form = form.into_inner();
+
+    dbg!(&path, &form);
+
+    let (status, header) = req.redirect_status_and_header();
+    HttpResponse::build(status)
+        .insert_header((header, format!("/projects/{}/documents/crawler", path.id)))
         .finish()
 }
 

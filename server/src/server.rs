@@ -119,6 +119,10 @@ fn init(cfg: &mut web::ServiceConfig) {
                 web::get().to(routes::document::new),
             )
             .route(
+                "/{id}/documents/crawler",
+                web::post().to(routes::document::crawler),
+            )
+            .route(
                 "/{id}/documents/{doc_id}",
                 web::get().to(routes::document::detail),
             ),
