@@ -6,8 +6,11 @@ static USER_AGENT_NAME: &str = "MagicDocsBot";
 
 #[cfg(test)]
 mod tests {
+    use crate::web_crawler::crawler::StreamOutput;
+
     use super::crawler::Crawler;
     use actix_web::test;
+    use futures_util::{pin_mut, StreamExt};
     use mockito::Server;
 
     #[test]
@@ -34,7 +37,15 @@ mod tests {
             .await;
 
         let mut crawler = Crawler::new(url, None).unwrap();
-        let result = crawler.start().await.unwrap();
+        let stream = crawler.start().await;
+        pin_mut!(stream);
+        let mut result = vec![];
+        while let Some(output) = stream.next().await {
+            match output {
+                StreamOutput::Result(results) => result = results,
+                _ => {}
+            }
+        }
 
         robots.assert();
         m1.assert();
@@ -68,7 +79,15 @@ mod tests {
             .expect(0);
 
         let mut crawler = Crawler::new(url, Some(0)).unwrap();
-        let result = crawler.start().await.unwrap();
+        let stream = crawler.start().await;
+        pin_mut!(stream);
+        let mut result = vec![];
+        while let Some(output) = stream.next().await {
+            match output {
+                StreamOutput::Result(results) => result = results,
+                _ => {}
+            }
+        }
 
         robots.assert();
         m1.assert();
@@ -108,7 +127,15 @@ mod tests {
             .expect(0);
 
         let mut crawler = Crawler::new(url, Some(1)).unwrap();
-        let result = crawler.start().await.unwrap();
+        let stream = crawler.start().await;
+        pin_mut!(stream);
+        let mut result = vec![];
+        while let Some(output) = stream.next().await {
+            match output {
+                StreamOutput::Result(results) => result = results,
+                _ => {}
+            }
+        }
 
         robots.assert();
         m1.assert();
@@ -155,7 +182,15 @@ mod tests {
             .expect(0);
 
         let mut crawler = Crawler::new(url, Some(2)).unwrap();
-        let result = crawler.start().await.unwrap();
+        let stream = crawler.start().await;
+        pin_mut!(stream);
+        let mut result = vec![];
+        while let Some(output) = stream.next().await {
+            match output {
+                StreamOutput::Result(results) => result = results,
+                _ => {}
+            }
+        }
 
         robots.assert();
         m1.assert();
@@ -191,7 +226,15 @@ mod tests {
             .expect(0);
 
         let mut crawler = Crawler::new(url, None).unwrap();
-        let result = crawler.start().await.unwrap();
+        let stream = crawler.start().await;
+        pin_mut!(stream);
+        let mut result = vec![];
+        while let Some(output) = stream.next().await {
+            match output {
+                StreamOutput::Result(results) => result = results,
+                _ => {}
+            }
+        }
 
         robots.assert();
         m1.assert();
@@ -225,7 +268,15 @@ mod tests {
             .expect(0);
 
         let mut crawler = Crawler::new(url, None).unwrap();
-        let result = crawler.start().await.unwrap();
+        let stream = crawler.start().await;
+        pin_mut!(stream);
+        let mut result = vec![];
+        while let Some(output) = stream.next().await {
+            match output {
+                StreamOutput::Result(results) => result = results,
+                _ => {}
+            }
+        }
 
         robots.assert();
         m1.assert();

@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use anyhow::Result;
+use futures_util::stream;
 use reqwest::Url;
 use tokio::time::sleep;
 
@@ -8,6 +9,11 @@ use super::{
     robots_txt::RobotsTxt,
     spider::{Spider, SpiderResult},
 };
+
+pub enum StreamOutput {
+    Message(String),
+    Result(Vec<CrawlerResult>),
+}
 
 pub struct Crawler {
     max_depth: Option<usize>,
@@ -24,66 +30,69 @@ impl Crawler {
         })
     }
 
-    pub async fn start(&mut self) -> Result<Vec<CrawlerResult>> {
-        let robots = RobotsTxt::from_url(&self.url).await;
-        let delay = robots.delay().unwrap_or(500);
-        let mut results = vec![];
+    pub async fn start(&mut self) -> impl stream::Stream<Item = StreamOutput> + '_ {
+        async_stream::stream! {
+            let robots = RobotsTxt::from_url(&self.url).await;
+            let delay = robots.delay().unwrap_or(500);
+            let mut results = vec![];
 
-        let mut queue: Vec<Url> = vec![self.url.clone()];
-        let mut visited: HashSet<String> = HashSet::new();
+            let mut queue: Vec<Url> = vec![self.url.clone()];
+            let mut visited: HashSet<String> = HashSet::new();
 
-        while let Some(url) = queue.pop() {
-            if !robots.is_allowed(&url) {
-                continue;
-            }
-
-            let path = url.path().to_owned();
-
-            if visited.contains(&path) {
-                continue;
-            } else {
-                visited.insert(path.to_owned());
-            }
-
-            println!(
-                "Crawling: {}://{}{}",
-                url.scheme(),
-                url.host_str().unwrap(),
-                url.path()
-            );
-            let spider = Spider::new(url.clone());
-            let result = match spider.start().await {
-                Ok(result) => result,
-                Err(_) => continue,
-            };
-
-            for link in result.found_urls() {
-                let path = link.path().to_owned();
-                let path = path.trim_end_matches('/');
-
-                if visited.contains(path) {
+            while let Some(url) = queue.pop() {
+                if !robots.is_allowed(&url) {
                     continue;
                 }
 
-                let relative_depth = self.find_relative_depth(&link);
-                let max_depth = self.max_depth.unwrap_or(usize::MAX);
+                let path = url.path().to_owned();
 
-                if 0 < relative_depth && relative_depth <= max_depth {
-                    queue.push(link);
+                if visited.contains(&path) {
+                    continue;
                 } else {
                     visited.insert(path.to_owned());
                 }
+
+                let scheme = url.scheme();
+                let host = url.host_str().unwrap_or_default();
+                let path = url.path();
+                yield StreamOutput::Message(format!("Visiting {}://{}{}", scheme, host, path));
+
+                let spider = Spider::new(url.clone());
+                let result = match spider.start().await {
+                    Ok(result) => result,
+                    Err(_) => continue,
+                };
+
+                for link in result.found_urls() {
+                    let path = link.path().to_owned();
+                    let path = path.trim_end_matches('/');
+
+                    if visited.contains(path) {
+                        continue;
+                    }
+
+                    let relative_depth = self.find_relative_depth(&link);
+                    let max_depth = self.max_depth.unwrap_or(usize::MAX);
+
+                    if 0 < relative_depth && relative_depth <= max_depth {
+                        queue.push(link);
+                    } else {
+                        visited.insert(path.to_owned());
+                    }
+                }
+
+                results.push(result);
+
+                if queue.is_empty() {
+                    break;
+                }
+                sleep(std::time::Duration::from_millis(delay)).await;
             }
 
-            results.push(result);
+            let results = CrawlerResult::from_spider_results(results);
+            yield StreamOutput::Result(results)
 
-            if queue.is_empty() {
-                break;
-            }
-            sleep(std::time::Duration::from_millis(delay)).await;
         }
-
-        Ok(CrawlerResult::from_spider_results(results))
     }
 
     fn find_relative_depth(&self, url: &Url) -> usize {
@@ -103,6 +112,7 @@ impl Crawler {
     }
 }
 
+#[derive(Clone)]
 pub struct CrawlerResult {
     path: String,
     title: String,

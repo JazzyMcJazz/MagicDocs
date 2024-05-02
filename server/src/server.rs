@@ -54,7 +54,8 @@ pub async fn run() -> std::io::Result<()> {
     // Start the HTTP server
     let mut server = HttpServer::new(move || {
         let cache_control = if rust_env == "dev" {
-            "no-store"
+            // "no-store"
+            "max-age=600"
         } else {
             "max-age=600"
         };

@@ -1,7 +1,12 @@
 use actix_web::{
-    web::{Data, Form, Path},
+    http::{
+        header::{CACHE_CONTROL, CONTENT_TYPE},
+        Error,
+    },
+    web::{Bytes, Data, Form, Path},
     HttpRequest, HttpResponse,
 };
+use futures_util::{pin_mut, StreamExt};
 use serde::Deserialize;
 
 use crate::{
@@ -10,7 +15,7 @@ use crate::{
     parsing::Markdown,
     server::AppState,
     utils::{extractor::Extractor, traits::Htmx},
-    web_crawler::crawler::Crawler,
+    web_crawler::crawler::{Crawler, StreamOutput},
 };
 
 pub async fn new(data: Data<AppState>, req: HttpRequest) -> HttpResponse {
@@ -63,27 +68,42 @@ pub async fn crawler(
     data: Data<AppState>,
     form: Form<StartCrawlerForm>,
     info: Path<ProjectPathInfo>,
-    req: HttpRequest,
-) -> HttpResponse {
+    _req: HttpRequest,
+) -> Result<HttpResponse, Error> {
     let _db = &data.conn;
-    let path = info.into_inner();
+    let _path = info.into_inner();
     let form = form.into_inner();
 
-    let mut crawler = Crawler::new(form.url, form.depth).unwrap();
-    let Ok(result) = crawler.start().await else {
-        return HttpResponse::InternalServerError().finish();
+    let mut results = vec![];
+
+    let response_body = async_stream::stream! {
+        let mut crawler = Crawler::new(form.url, form.depth).unwrap();
+        let stream = crawler.start().await;
+        pin_mut!(stream);
+        while let Some(r) = stream.next().await {
+            match r {
+                StreamOutput::Message(msg) => {
+                    println!("{}", msg);
+                    yield Ok::<Bytes, Error>(Bytes::from(msg));
+                }
+                StreamOutput::Result(res) => {
+                    results = res;
+                }
+            }
+        };
+        for res in results {
+            let _ = res.path();
+            let _ = res.title();
+            let _ = res.html();
+        }
     };
 
-    for res in result {
-        let _ = res.path();
-        let _ = res.title();
-        let _ = res.html();
-    }
+    let response = HttpResponse::Ok()
+        .insert_header((CONTENT_TYPE, "text/event-stream"))
+        .insert_header((CACHE_CONTROL, "no-cache"))
+        .streaming(response_body);
 
-    let (status, header) = req.redirect_status_and_header();
-    HttpResponse::build(status)
-        .insert_header((header, format!("/projects/{}/documents/crawler", path.id)))
-        .finish()
+    Ok(response)
 }
 
 #[derive(Deserialize)]
