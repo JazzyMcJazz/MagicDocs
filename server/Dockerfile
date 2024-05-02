@@ -1,6 +1,7 @@
-# Builder image
+### BUILDER IMAGE ###
 FROM rust:1.77.2-alpine3.19 as builder
 
+# Install system dependencies
 RUN apk update && apk add --no-cache \
     openssl-dev \
     musl-dev \
@@ -9,9 +10,11 @@ RUN apk update && apk add --no-cache \
     nodejs \
     npm
 
+# Create a new rust project
 RUN USER=root cargo new --bin app
 WORKDIR /app
 
+# Download the tailwindcss binary for the target architecture
 ARG ARCH
 RUN if [ -z "$ARCH" ]; then \
         ARCH=$(uname -m); \
@@ -28,41 +31,57 @@ RUN if [ -z "$ARCH" ]; then \
     mv tailwindcss-linux-${ARCH} tailwindcss
 
 
-
+# Copy the dependencies files
 COPY Cargo.toml Cargo.lock ./
 COPY migration migration
 COPY entity entity
 
+# Build the dependencies for release and test
 RUN RUSTFLAGS="-C target-feature=-crt-static" cargo build --release
 
+# Remove artifacts from the previous build
 RUN rm -f /app/target/release/deps/magicdocs*
 
+# Copy the source code
 COPY src src
+
+# Run unit tests
+RUN RUSTFLAGS="-C target-feature=-crt-static" cargo test
+
+# Build the project
 RUN RUSTFLAGS="-C target-feature=-crt-static" cargo build --release
 
+# Copy the static files
 COPY static static
-
 COPY input.css .
 COPY tailwind.config.js .
 COPY templates templates
+
+# Build the CSS
 RUN ./tailwindcss -i input.css -o static/css/styles.css --minify
 
+# Copy the typescript files
 COPY typescript typescript
+
+# Build the typescript files
 RUN cd typescript && npm install && npm run build
 
-# Runner image
+### RUNNER IMAGE ###
 FROM alpine:3.19.1
 
+# Install system dependencies
 RUN apk update && apk add --no-cache \
     openssl \
     ca-certificates \
     libgcc
 
+# Create a new user and group
 RUN addgroup -g 1000 magicdocs && \
     adduser -D -s /bin/sh -u 1000 -G magicdocs magicdocs
 
 WORKDIR /home/magicdocs/bin/
 
+# Copy the built binary and static files
 COPY --from=builder /app/target/release/magicdocs .
 COPY --from=builder /app/templates/ templates/
 COPY --from=builder /app/static/ static/

@@ -48,8 +48,21 @@ form label {
 	@apply mt-2;
 }
 
-form input[type=text], form textarea {
+form input[type=text], input[type=number], form textarea {
 	@apply bg-[#181818] text-white border-2 border-base rounded-sm focus:border-pink-500/50 focus:ring-0;
+}
+
+form input[disabled] {
+	@apply bg-[#242424] text-gray-400;
+}
+
+form label.disabled {
+	@apply text-gray-400;
+}
+
+form input[type=checkbox] {
+	@apply bg-[#181818] text-pink-500/50 rounded-sm shadow-none;
+	@apply focus:ring-0 focus:ring-offset-0 border-2 w-5 h-5;
 }
 
 body {

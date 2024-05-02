@@ -9,7 +9,7 @@ mod parsing;
 mod routes;
 mod server;
 mod utils;
-// mod web_crawler;
+mod web_crawler;
 
 fn main() {
     dotenv().ok();

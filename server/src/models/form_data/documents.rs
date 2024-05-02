@@ -9,6 +9,6 @@ pub struct CreateDocumentForm {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct StartCrawlerForm {
-    pub pages: String,
     pub url: String,
+    pub depth: Option<usize>,
 }

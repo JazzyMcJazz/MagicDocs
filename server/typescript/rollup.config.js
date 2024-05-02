@@ -9,6 +9,7 @@ export default {
         htmx: 'src/htmx.js',
         global: 'src/global.ts',
         editor: 'src/editor.ts',
+        crawler: 'src/crawler.ts',
         'browser-sync-client': 'src/browser-sync-client.ts',
     },
     output: {

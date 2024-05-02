@@ -10,6 +10,7 @@ use crate::{
     parsing::Markdown,
     server::AppState,
     utils::{extractor::Extractor, traits::Htmx},
+    web_crawler::crawler::Crawler,
 };
 
 pub async fn new(data: Data<AppState>, req: HttpRequest) -> HttpResponse {
@@ -68,7 +69,16 @@ pub async fn crawler(
     let path = info.into_inner();
     let form = form.into_inner();
 
-    dbg!(&path, &form);
+    let mut crawler = Crawler::new(form.url, form.depth).unwrap();
+    let Ok(result) = crawler.start().await else {
+        return HttpResponse::InternalServerError().finish();
+    };
+
+    for res in result {
+        let _ = res.path();
+        let _ = res.title();
+        let _ = res.html();
+    }
 
     let (status, header) = req.redirect_status_and_header();
     HttpResponse::build(status)
