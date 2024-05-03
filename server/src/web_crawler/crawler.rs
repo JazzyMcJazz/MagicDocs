@@ -12,7 +12,7 @@ use super::{
 
 pub enum StreamOutput {
     Message(String),
-    Result(Vec<CrawlerResult>),
+    Result(CrawlerResult),
 }
 
 pub struct Crawler {
@@ -34,7 +34,6 @@ impl Crawler {
         async_stream::stream! {
             let robots = RobotsTxt::from_url(&self.url).await;
             let delay = robots.delay().unwrap_or(500);
-            let mut results = vec![];
 
             let mut queue: Vec<Url> = vec![self.url.clone()];
             let mut visited: HashSet<String> = HashSet::new();
@@ -81,17 +80,13 @@ impl Crawler {
                     }
                 }
 
-                results.push(result);
+                yield StreamOutput::Result(CrawlerResult::from_spider_result(result));
 
                 if queue.is_empty() {
                     break;
                 }
                 sleep(std::time::Duration::from_millis(delay)).await;
             }
-
-            let results = CrawlerResult::from_spider_results(results);
-            yield StreamOutput::Result(results)
-
         }
     }
 
@@ -114,27 +109,22 @@ impl Crawler {
 
 #[derive(Clone)]
 pub struct CrawlerResult {
-    path: String,
+    url: Url,
     title: String,
     html: String,
 }
 
 impl CrawlerResult {
-    fn from_spider_results(spider_results: Vec<SpiderResult>) -> Vec<Self> {
-        let mut results = vec![];
-
-        for spider_result in spider_results {
-            results.push(Self {
-                path: spider_result.url().path().to_owned(),
-                title: spider_result.page_title(),
-                html: spider_result.html(),
-            });
+    fn from_spider_result(spider_result: SpiderResult) -> Self {
+        Self {
+            url: spider_result.url().to_owned(),
+            title: spider_result.page_title(),
+            html: spider_result.html(),
         }
-        results
     }
 
-    pub fn path(&self) -> String {
-        self.path.clone()
+    pub fn url(&self) -> Url {
+        self.url.clone()
     }
     pub fn title(&self) -> String {
         self.title.clone()

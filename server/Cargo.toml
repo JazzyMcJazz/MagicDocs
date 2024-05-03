@@ -26,6 +26,9 @@ anyhow = "1.0.82"
 comrak = "0.23.0"
 scraper = "0.19.0"
 regex = "1.10.4"
+langchain-rust = "4.1.0"
+serde_json = "1.0.116"
+html2text = "0.12.4"
 
 [dev-dependencies]
 mockito = "1.4.0"

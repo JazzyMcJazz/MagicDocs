@@ -83,7 +83,9 @@ impl Spider {
 
     fn extract_title(&self, html: &str) -> Result<String> {
         let document = Html::parse_document(html);
-        let selector = Selector::parse("h1").unwrap();
+        let Ok(selector) = Selector::parse("h1") else {
+            bail!("Failed to parse selector");
+        };
 
         let mut title = document
             .select(&selector)
@@ -91,7 +93,9 @@ impl Spider {
             .map(|e| e.text().collect::<String>());
 
         if title.is_none() {
-            let selector = Selector::parse("title").unwrap();
+            let Ok(selector) = Selector::parse("title") else {
+                bail!("Failed to parse selector");
+            };
             title = document
                 .select(&selector)
                 .next()

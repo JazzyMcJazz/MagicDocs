@@ -149,6 +149,7 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(Document::Name).string().not_null())
                     .col(ColumnDef::new(Document::Content).text().not_null())
+                    .col(ColumnDef::new(Document::Source).string())
                     .col(ColumnDef::new(Document::CreatedAt).timestamp().default(CURRENT_TIMESTAMP))
                     .to_owned(),
             )
@@ -267,6 +268,7 @@ enum Document {
     Table,
     Id,
     Name,
+    Source,
     Content,
     CreatedAt,
 }

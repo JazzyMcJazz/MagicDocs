@@ -39,10 +39,10 @@ mod tests {
         let mut crawler = Crawler::new(url, None).unwrap();
         let stream = crawler.start().await;
         pin_mut!(stream);
-        let mut result = vec![];
+        let mut results = vec![];
         while let Some(output) = stream.next().await {
             match output {
-                StreamOutput::Result(results) => result = results,
+                StreamOutput::Result(result) => results.push(result),
                 _ => {}
             }
         }
@@ -51,7 +51,7 @@ mod tests {
         m1.assert();
         m2.assert();
 
-        assert_eq!(result.len(), 2);
+        assert_eq!(results.len(), 2);
     }
 
     #[test]
@@ -81,10 +81,10 @@ mod tests {
         let mut crawler = Crawler::new(url, Some(0)).unwrap();
         let stream = crawler.start().await;
         pin_mut!(stream);
-        let mut result = vec![];
+        let mut results = vec![];
         while let Some(output) = stream.next().await {
             match output {
-                StreamOutput::Result(results) => result = results,
+                StreamOutput::Result(result) => results.push(result),
                 _ => {}
             }
         }
@@ -93,7 +93,7 @@ mod tests {
         m1.assert();
         m2.assert();
 
-        assert_eq!(result.len(), 1);
+        assert_eq!(results.len(), 1);
     }
 
     #[test]
@@ -129,10 +129,10 @@ mod tests {
         let mut crawler = Crawler::new(url, Some(1)).unwrap();
         let stream = crawler.start().await;
         pin_mut!(stream);
-        let mut result = vec![];
+        let mut results = vec![];
         while let Some(output) = stream.next().await {
             match output {
-                StreamOutput::Result(results) => result = results,
+                StreamOutput::Result(result) => results.push(result),
                 _ => {}
             }
         }
@@ -142,7 +142,7 @@ mod tests {
         m2.assert();
         m3.assert();
 
-        assert_eq!(result.len(), 2);
+        assert_eq!(results.len(), 2);
     }
 
     #[test]
@@ -184,10 +184,10 @@ mod tests {
         let mut crawler = Crawler::new(url, Some(2)).unwrap();
         let stream = crawler.start().await;
         pin_mut!(stream);
-        let mut result = vec![];
+        let mut results = vec![];
         while let Some(output) = stream.next().await {
             match output {
-                StreamOutput::Result(results) => result = results,
+                StreamOutput::Result(result) => results.push(result),
                 _ => {}
             }
         }
@@ -198,7 +198,7 @@ mod tests {
         m3.assert();
         m4.assert();
 
-        assert_eq!(result.len(), 3);
+        assert_eq!(results.len(), 3);
     }
 
     #[test]
@@ -228,10 +228,10 @@ mod tests {
         let mut crawler = Crawler::new(url, None).unwrap();
         let stream = crawler.start().await;
         pin_mut!(stream);
-        let mut result = vec![];
+        let mut results = vec![];
         while let Some(output) = stream.next().await {
             match output {
-                StreamOutput::Result(results) => result = results,
+                StreamOutput::Result(result) => results.push(result),
                 _ => {}
             }
         }
@@ -240,7 +240,7 @@ mod tests {
         m1.assert();
         m2.assert();
 
-        assert_eq!(result.len(), 1);
+        assert_eq!(results.len(), 1);
     }
 
     #[test]
@@ -270,10 +270,10 @@ mod tests {
         let mut crawler = Crawler::new(url, None).unwrap();
         let stream = crawler.start().await;
         pin_mut!(stream);
-        let mut result = vec![];
+        let mut results = vec![];
         while let Some(output) = stream.next().await {
             match output {
-                StreamOutput::Result(results) => result = results,
+                StreamOutput::Result(result) => results.push(result),
                 _ => {}
             }
         }
@@ -282,6 +282,6 @@ mod tests {
         m1.assert();
         m2.assert();
 
-        assert_eq!(result.len(), 1);
+        assert_eq!(results.len(), 1);
     }
 }

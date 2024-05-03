@@ -8,11 +8,12 @@ use actix_web::{
 };
 use futures_util::{pin_mut, StreamExt};
 use serde::Deserialize;
+use tokio::time::sleep;
 
 use crate::{
     database::Repo,
     models::{CreateDocumentForm, StartCrawlerForm},
-    parsing::Markdown,
+    parsing::{HtmlParser, Markdown},
     server::AppState,
     utils::{extractor::Extractor, traits::Htmx},
     web_crawler::crawler::{Crawler, StreamOutput},
@@ -70,32 +71,62 @@ pub async fn crawler(
     info: Path<ProjectPathInfo>,
     _req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
-    let _db = &data.conn;
-    let _path = info.into_inner();
+    let path = info.into_inner();
     let form = form.into_inner();
 
-    let mut results = vec![];
-
     let response_body = async_stream::stream! {
-        let mut crawler = Crawler::new(form.url, form.depth).unwrap();
+        let db = &data.conn;
+        let project_id = path.id;
+        let mut results = vec![];
+        let Ok(mut crawler) = Crawler::new(form.url, form.depth) else {
+            yield Ok::<Bytes, Error>(Bytes::from("data: Error\n\n"));
+            return;
+        };
         let stream = crawler.start().await;
         pin_mut!(stream);
         while let Some(r) = stream.next().await {
             match r {
                 StreamOutput::Message(msg) => {
-                    println!("{}", msg);
-                    yield Ok::<Bytes, Error>(Bytes::from(msg));
+                    let message = format!("data: {}\n\n", msg);
+                    yield Ok::<Bytes, Error>(Bytes::from(message));
                 }
                 StreamOutput::Result(res) => {
-                    results = res;
+                    results.push(res);
+                    // if results.len() >= 10 {
+                    //     let copy = results.clone();
+                    //     results.clear();
+                    // }
                 }
             }
         };
+
+        let message = "data: Processings results...\n\n";
+        yield Ok::<Bytes, Error>(Bytes::from(message));
+
+        let mut documents = vec![];
         for res in results {
-            let _ = res.path();
-            let _ = res.title();
-            let _ = res.html();
+            let message = format!("data: Processing {}\n\n", res.title());
+            yield Ok::<Bytes, Error>(Bytes::from(message));
+            let parser = HtmlParser::new(&res.title(), &res.html(), res.url());
+            match parser.parse() {
+                Ok(doc) => documents.push(doc),
+                Err(e) => {
+                    let message = format!("data: Error: {}\n\n", e);
+                    yield Ok::<Bytes, Error>(Bytes::from(message));
+                }
+            }
+            sleep(std::time::Duration::from_millis(100)).await;
         }
+
+        let message = "data: Saving documents...\n\n";
+        yield Ok::<Bytes, Error>(Bytes::from(message));
+
+        // dbg!(&documents);
+        let _ = db.documents().create_many_from_documents(project_id, documents).await;
+
+        let message = "data: Done\n\n";
+        yield Ok::<Bytes, Error>(Bytes::from(message));
+        sleep(std::time::Duration::from_secs(1)).await;
     };
 
     let response = HttpResponse::Ok()

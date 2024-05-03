@@ -33,4 +33,32 @@ impl<'a> DocumentVersionRepo<'a> {
 
         Ok(())
     }
+
+    pub async fn create_many(
+        &self,
+        project_version_id: i32,
+        document_ids: Vec<i32>,
+        tnx: Option<&DatabaseTransaction>,
+    ) -> Result<()> {
+        let models = document_ids
+            .iter()
+            .map(|&document_id| ActiveModel {
+                project_version_id: Set(project_version_id),
+                document_id: Set(document_id),
+            })
+            .collect::<Vec<_>>();
+
+        match tnx {
+            Some(tnx) => Entity::insert_many(models)
+                .exec(tnx)
+                .await
+                .context("Failed to create document versions")?,
+            None => Entity::insert_many(models)
+                .exec(self.0)
+                .await
+                .context("Failed to create document versions")?,
+        };
+
+        Ok(())
+    }
 }

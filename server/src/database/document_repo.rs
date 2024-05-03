@@ -1,3 +1,5 @@
+use std::vec;
+
 use anyhow::Result;
 use entity::{
     document::{ActiveModel, Column, Entity, Model, Relation},
@@ -5,13 +7,16 @@ use entity::{
 };
 use migration::{
     sea_orm::{
-        prelude::*, DatabaseConnection, EntityTrait, QueryFilter, QuerySelect, Set,
-        TransactionTrait,
+        prelude::*, DatabaseConnection, DbBackend, EntityTrait, QueryFilter, QuerySelect, Set,
+        Statement, TransactionTrait,
     },
-    JoinType,
+    JoinType, PostgresQueryBuilder, Query,
 };
 
-use crate::models::DocumentWithIdAndName;
+use crate::{
+    models::DocumentWithIdAndName,
+    parsing::{Done, HtmlParser},
+};
 
 use super::Repo;
 
@@ -90,5 +95,64 @@ impl<'a> DocumentRepo<'a> {
         };
 
         Ok(res.last_insert_id)
+    }
+
+    pub async fn create_many_from_documents(
+        &self,
+        project_id: i32,
+        data: Vec<HtmlParser<Done>>,
+    ) -> Result<()> {
+        let project_version = self
+            .0
+            .projects_versions()
+            .find_latest_by_project_id(project_id)
+            .await?;
+
+        let project_version_id = match project_version {
+            Some(version) => version.id,
+            None => self.0.projects_versions().create(project_id).await?,
+        };
+
+        let tnx = self.0.begin().await?;
+
+        let mut builder = Query::insert();
+        let mut builder =
+            builder
+                .into_table(Entity)
+                .columns(vec![Column::Name, Column::Content, Column::Source]);
+
+        for doc in data {
+            builder = builder.values_panic(vec![
+                doc.name().into(),
+                doc.content().into(),
+                doc.source().into(),
+            ]);
+        }
+
+        let (sql, values) = builder
+            .returning(Query::returning().columns([Column::Id]))
+            .build(PostgresQueryBuilder);
+
+        let ids: Vec<Result<i32, DbErr>> = tnx
+            .query_all(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                sql,
+                values,
+            ))
+            .await?
+            .iter()
+            .map(|row| row.try_get::<i32>("", "id"))
+            .collect();
+
+        let document_ids = ids.into_iter().collect::<Result<Vec<_>, _>>()?;
+
+        self.0
+            .documents_versions()
+            .create_many(project_version_id, document_ids, Some(&tnx))
+            .await?;
+
+        tnx.commit().await?;
+
+        Ok(())
     }
 }

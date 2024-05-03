@@ -57,12 +57,16 @@ form input[disabled] {
 }
 
 form label.disabled {
-	@apply text-gray-400;
+	@apply text-gray-400 hover:bg-inherit;
 }
 
 form input[type=checkbox] {
 	@apply bg-[#181818] text-pink-500/50 rounded-sm shadow-none;
 	@apply focus:ring-0 focus:ring-offset-0 border-2 w-5 h-5;
+}
+
+form input[type=checkbox]:disabled {
+	@apply bg-[#242424] text-gray-400;
 }
 
 body {
