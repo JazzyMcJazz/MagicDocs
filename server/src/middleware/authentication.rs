@@ -85,20 +85,24 @@ where
             let fut = self.service.call(req);
 
             return Box::pin(async move {
-                let Ok(token) = app_data
+                let token = match app_data
                     .keycloak
                     .exchange_token(GrantType::AuthorizationCode(code.clone()), &redirect_uri)
                     .await
-                else {
-                    return Err(AuthenticationError {
-                        status: StatusCode::UNAUTHORIZED,
-                        app_data: Some(app_data),
-                        token_response: None,
-                        conn_info,
-                        uri,
-                        headers: req_headers,
+                {
+                    Ok(token) => token,
+                    Err(e) => {
+                        eprintln!("Error exchanging code: {:?}", e);
+                        return Err(AuthenticationError {
+                            status: StatusCode::UNAUTHORIZED,
+                            app_data: Some(app_data),
+                            token_response: None,
+                            conn_info,
+                            uri,
+                            headers: req_headers,
+                        }
+                        .into());
                     }
-                    .into());
                 };
 
                 match Some(()) {
@@ -131,6 +135,7 @@ where
                         )
                         .await
                     else {
+                        eprintln!("Error exchanging refresh token");
                         return Err(AuthenticationError {
                             status: StatusCode::UNAUTHORIZED,
                             app_data: Some(app_data),
@@ -158,6 +163,7 @@ where
                 });
             }
 
+            println!("No tokens found, redirecting to Keycloak");
             return Box::pin(async move {
                 Err(AuthenticationError {
                     status: StatusCode::UNAUTHORIZED,

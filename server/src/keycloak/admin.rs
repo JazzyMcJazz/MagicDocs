@@ -74,8 +74,7 @@ impl Keycloak {
                     let token = response.json::<super::TokenResponse>().await?;
                     Ok(token)
                 } else {
-                    dbg!(response.text().await?);
-                    bail!("Failed to exchange token")
+                    bail!(response.text().await?)
                 }
             }
             Err(e) => bail!(e),
