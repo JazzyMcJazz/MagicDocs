@@ -176,7 +176,6 @@ pipeline {
                                 -o docs.treeleaf.dev \
                                 -m admin@treeleaf.dev \
                                 --depends-on db \
-                                --depends-on kc \
                             -a db \
                                 -i pgvector:latest \
                                 -v magicdocs_db:/var/lib/postgresql/data \
