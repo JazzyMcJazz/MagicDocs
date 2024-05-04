@@ -79,8 +79,7 @@ pipeline {
                         --network-alias server \
                         -e RUST_ENV=test \
                         -e DATABASE_URL=postgres://magicdocs:magicdocs@db:5432/magicdocs \
-                        -e KEYCLOAK_INTERNAL_ADDR=https://kc.treeleaf.dev \
-                        -e KEYCLOAK_EXTERNAL_ADDR=https://kc.treeleaf.dev \
+                        -e KEYCLOAK_URL=https://kc.treeleaf.dev \
                         -e KEYCLOAK_USER=$KEYCLOAK_ADMIN_USERNAME \
                         -e KEYCLOAK_PASSWORD=$KEYCLOAK_ADMIN_PASSWORD \
                         -e KEYCLOAK_REALM=magicdocs \
@@ -166,8 +165,7 @@ pipeline {
                                 -e MY_LOG=info \
                                 -e RUST_BACKTRACE=0 \
                                 -e DATABASE_URL=postgres://magicdocs:\\$MD_DB_PASS@db:5432/magicdocs \
-                                -e KEYCLOAK_INTERNAL_ADDR=http://kc:8080 \
-                                -e KEYCLOAK_EXTERNAL_ADDR=https://kc.treeleaf.dev \
+                                -e KEYCLOAK_URL=https://kc.treeleaf.dev \
                                 -e KEYCLOAK_USER=\\$KEYCLOAK_ADMIN_USERNAME \
                                 -e KEYCLOAK_PASSWORD=\\$KEYCLOAK_ADMIN_PASSWORD \
                                 -e KEYCLOAK_REALM=magicdocs \

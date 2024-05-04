@@ -12,8 +12,7 @@ use super::{jwk::Jwks, GrantType, JwksCache};
 pub struct Keycloak {
     // admin: Arc<Mutex<KeycloakAdmin>>,
     jwk_cache: Arc<Mutex<LruCache<&'static str, JwksCache>>>,
-    internal_base_url: String,
-    external_base_url: String,
+    base_url: String,
     realm_id: String,
     client_id: String,
     client_secret: String,
@@ -21,10 +20,7 @@ pub struct Keycloak {
 
 impl Keycloak {
     pub async fn new() -> Result<Self> {
-        let internal_base_url =
-            std::env::var("KEYCLOAK_INTERNAL_ADDR").expect("KEYCLOAK_INTERNAL_ADDR must be set");
-        let external_base_url =
-            std::env::var("KEYCLOAK_EXTERNAL_ADDR").expect("KEYCLOAK_EXTERNAL_ADDR must be set");
+        let base_url = std::env::var("KEYCLOAK_URL").expect("KEYCLOAK_URL must be set");
         // let user = std::env::var("KEYCLOAK_USER").expect("KEYCLOAK_USER must be set");
         // let password = std::env::var("KEYCLOAK_PASSWORD").expect("KEYCLOAK_PASSWORD must be set");
         let realm_id = std::env::var("KEYCLOAK_REALM").expect("KEYCLOAK_REALM must be set");
@@ -40,8 +36,7 @@ impl Keycloak {
         Ok(Self {
             // admin: Arc::new(Mutex::new(admin)),
             jwk_cache: Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(1).unwrap()))),
-            internal_base_url,
-            external_base_url,
+            base_url,
             realm_id,
             client_id,
             client_secret,
@@ -54,7 +49,7 @@ impl Keycloak {
         redirect_uri: &str,
     ) -> Result<super::TokenResponse> {
         let client = reqwest::Client::new();
-        let base_url = &self.internal_base_url;
+        let base_url = &self.base_url;
         let realm_id = &self.realm_id;
         let client_secret = &self.client_secret;
         let token_url = format!("{base_url}/realms/{realm_id}/protocol/openid-connect/token");
@@ -107,7 +102,7 @@ impl Keycloak {
 
     pub fn login_url(&self, redirect_uri: &str) -> String {
         let state = "asdf"; // generate_random_state();  // Implement this function to generate a random state
-        let base_url = &self.external_base_url;
+        let base_url = &self.base_url;
         let realm_id = &self.realm_id;
         let client_id = &self.client_id;
 
@@ -119,7 +114,7 @@ impl Keycloak {
 
     pub async fn logout(&self, refresh_token: &str) -> Result<()> {
         let client = reqwest::Client::new();
-        let base_url = &self.internal_base_url;
+        let base_url = &self.base_url;
         let realm_id = &self.realm_id;
         let client_secret = &self.client_secret;
         let token_url = format!("{base_url}/realms/{realm_id}/protocol/openid-connect/logout");
@@ -160,7 +155,7 @@ impl Keycloak {
 
     async fn fetch_jwks(&self) -> Result<Jwks> {
         let client = reqwest::Client::new();
-        let base_url = &self.external_base_url;
+        let base_url = &self.base_url;
         let realm_id = &self.realm_id;
         let jwks_url = format!("{base_url}/realms/{realm_id}/protocol/openid-connect/certs");
 
@@ -187,8 +182,8 @@ impl Keycloak {
 impl fmt::Debug for Keycloak {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Keycloak")
-            .field("internal_base_url", &self.internal_base_url)
-            .field("external_base_url", &self.external_base_url)
+            .field("internal_base_url", &self.base_url)
+            .field("external_base_url", &self.base_url)
             .field("realm_id", &self.realm_id)
             .field("client_id", &self.client_id)
             // Optionally show whether admin is currently locked
@@ -204,8 +199,7 @@ impl Clone for Keycloak {
         Keycloak {
             // admin: self.admin.clone(), // Clones the Arc, not the KeycloakAdmin
             jwk_cache: self.jwk_cache.clone(),
-            internal_base_url: self.internal_base_url.clone(),
-            external_base_url: self.external_base_url.clone(),
+            base_url: self.base_url.clone(),
             realm_id: self.realm_id.clone(),
             client_id: self.client_id.clone(),
             client_secret: self.client_secret.clone(),

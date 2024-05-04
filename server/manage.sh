@@ -30,8 +30,7 @@ function start() {
         -e MY_LOG=$MY_LOG \
         -e RUST_BACKTRACE=$RUST_BACKTRACE \
         -e DATABASE_URL=postgres://magicdocs:magicdocs@magicdocs-db:5432/magicdocs \
-        -e KEYCLOAK_INTERNAL_ADDR=$KEYCLOAK_INTERNAL_ADDR \
-        -e KEYCLOAK_EXTERNAL_ADDR=$KEYCLOAK_EXTERNAL_ADDR \
+        -e KEYCLOAK_URL=$KEYCLOAK_URL \
         -e KEYCLOAK_USER=$KEYCLOAK_USER \
         -e KEYCLOAK_PASSWORD=$KEYCLOAK_PASSWORD \
         -e KEYCLOAK_REALM=$KEYCLOAK_REALM \
