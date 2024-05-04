@@ -11,8 +11,8 @@ pipeline {
                 script {
                     echo 'Building Docker images'
                     sh 'docker build -t pgvector:latest database/'
-                    sh 'docker build -t keycloak:latest keycloak/'
                     sh 'docker build -t magicdocs:latest server/'
+                    sh 'docker build -t magicdocs_playwright:latest e2e/'
                 }
             }
         }
@@ -30,12 +30,6 @@ pipeline {
 
             }
             steps {
-                // Build the Playwright test image
-                script {
-                    echo 'Building Docker image for Playwright tests'
-                    sh 'docker build -t magicdocs_playwright:latest e2e/'
-                }
-
                 // Setup the test environment
                 script {
                     echo 'Creating test environment'
@@ -50,8 +44,6 @@ pipeline {
                         --network-alias db \
                         -e POSTGRES_PASSWORD=postgres \
                         -e PG_PASS=postgres \
-                        -e KC_DB_USER=unused \
-                        -e KC_DB_PASS=unused \
                         -e MD_DB_USER=magicdocs \
                         -e MD_DB_PASS=magicdocs \
                         -v magicdocs_test_db:/var/lib/postgresql/data \
@@ -145,26 +137,24 @@ pipeline {
         stage('Deploy to Production') {
             environment {
                 PG_PASS = credentials('PG_PASS')
-                KC_DB_PASS = credentials('KC_DB_PASS')
+                MD_DB_USER = credentials('MD_DB_USER')
                 MD_DB_PASS = credentials('MD_DB_PASS')
+                KEYCLOAK_ADMIN_USERNAME = credentials('KEYCLOAK_ADMIN_USERNAME')
                 KEYCLOAK_ADMIN_PASSWORD = credentials('KEYCLOAK_ADMIN_PASSWORD')
                 KEYCLOAK_CLIENT_SECRET = credentials('KEYCLOAK_CLIENT_SECRET')
             }
             steps {
                 echo 'Saving Docker images'
                 sh 'docker save -o pgvector.tar pgvector:latest'
-                sh 'docker save -o keycloak.tar keycloak:latest'
                 sh 'docker save -o magicdocs.tar magicdocs:latest'
 
                 withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'DeploymentTargetServer', keyFileVariable: 'SSH_KEY')]) {
                     echo 'Copying Docker images to production server'
                     sh 'scp -i $SSH_KEY pgvector.tar $SSH_TARGET:~'
-                    sh 'scp -i $SSH_KEY keycloak.tar $SSH_TARGET:~'
                     sh 'scp -i $SSH_KEY magicdocs.tar $SSH_TARGET:~'
 
                     echo 'Loading Docker images on production server'
                     sh 'ssh -i $SSH_KEY $SSH_TARGET \'docker load -i pgvector.tar && \
-                        docker load -i keycloak.tar && \
                         docker load -i magicdocs.tar\''
 
                     echo 'Running Docker containers on production server'
@@ -178,7 +168,7 @@ pipeline {
                                 -e DATABASE_URL=postgres://magicdocs:\\$MD_DB_PASS@db:5432/magicdocs \
                                 -e KEYCLOAK_INTERNAL_ADDR=http://kc:8080 \
                                 -e KEYCLOAK_EXTERNAL_ADDR=https://kc.treeleaf.dev \
-                                -e KEYCLOAK_USER=admin \
+                                -e KEYCLOAK_USER=\\$KEYCLOAK_ADMIN_USERNAME \
                                 -e KEYCLOAK_PASSWORD=\\$KEYCLOAK_ADMIN_PASSWORD \
                                 -e KEYCLOAK_REALM=magicdocs \
                                 -e KEYCLOAK_CLIENT=magicdocs \
@@ -187,23 +177,12 @@ pipeline {
                                 -m admin@treeleaf.dev \
                                 --depends-on db \
                                 --depends-on kc \
-                            -a kc \
-                                -i keycloak:latest \
-                                -p 8080 \
-                                -e KC_DB=postgres \
-                                -e KC_DB_USERNAME=keycloak \
-                                -e KC_DB_PASSWORD=\\$KC_DB_PASS \
-                                -e KC_DB_URL_HOST=db \
-                                -e KC_DB_URL_PORT=5432 \
-                                -e KC_DB_URL_DATABASE=keycloak \
-                                -o kc.treeleaf.dev \
-                                -m admin@treeleaf.dev \
-                                -c \"start --hostname=kc.treeleaf.dev --http-enabled=true --proxy-headers=xforwarded --health-enabled true\" \
-                                --depends-on db \
-                                --network-alias kc \
                             -a db \
                                 -i pgvector:latest \
                                 -v magicdocs_db:/var/lib/postgresql/data \
+                                -e POSTGRES_PASSWORD=\\$PG_PASS \
+                                -e MD_DB_USER=\\$MD_DB_USER \
+                                -e MD_DB_PASS=\\$MD_DB_PASS \
                                 --network-alias db'"
                     }
                 }
@@ -214,8 +193,8 @@ pipeline {
         always {
             echo 'Cleaning up local environment'
             script {
-                sh 'docker rmi pgvector:latest keycloak:latest magicdocs:latest || true'
-                sh 'rm pgvector.tar keycloak.tar magicdocs.tar || true'
+                sh 'docker rmi pgvector:latest magicdocs:latest || true'
+                sh 'rm pgvector.tar magicdocs.tar || true'
                 sh 'docker image prune -f'
                 sh 'docker volume prune -f'
             }
@@ -223,7 +202,7 @@ pipeline {
             echo 'Cleaning up production server'
             withCredentials(bindings: [sshUserPrivateKey(credentialsId: 'DeploymentTargetServer', keyFileVariable: 'SSH_KEY')]) {
                 script {
-                    sh 'ssh -i $SSH_KEY $SSH_TARGET \'rm pgvector.tar keycloak.tar magicdocs.tar\' || true'
+                    sh 'ssh -i $SSH_KEY $SSH_TARGET \'rm pgvector.tar magicdocs.tar\' || true'
                 }
             }
         }
