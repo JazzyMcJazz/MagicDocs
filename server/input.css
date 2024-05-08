@@ -116,6 +116,14 @@ nav a {
 	@apply border-pink-600/90 bg-[#282828] hover:bg-[#282828];
 }
 
+#document-nav li a {
+	@apply block p-4 text-white hover:bg-[#202020];
+}
+
+#document-nav li a.active {
+	@apply bg-[#282828] hover:bg-[#282828];
+}
+
 .tab {
 	@apply flex items-center h-full border-b-1 border-r-1 border-base hover:bg-[#282828];
 }

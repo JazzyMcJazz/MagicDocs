@@ -91,6 +91,11 @@ where
                 None => None,
             };
 
+            let active_document = match &documents {
+                Some(documents) => Extractor::active_document(req.path(), documents),
+                None => None,
+            };
+
             let mut context = Context::new();
             context.insert("path", req.path());
             context.insert("user", &user_data);
@@ -98,6 +103,7 @@ where
             context.insert("projects", &projects);
             context.insert("project", &active_project);
             context.insert("documents", &documents);
+            context.insert("document", &active_document);
 
             req.extensions_mut().insert(context);
             req.extensions_mut().insert(user_data);

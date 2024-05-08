@@ -41,6 +41,7 @@ pub async fn run() -> std::io::Result<()> {
         panic!("Failed to initialize Tera template engine");
     };
     tera.register_tester("active_project", tera_testers::active_project);
+    tera.register_tester("active_document", tera_testers::active_document);
 
     let keycloak = Keycloak::new().await.unwrap();
 

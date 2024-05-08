@@ -5,24 +5,27 @@
 {% endblock %}
 
 {% block main %}
-    <div class="relative h-[calc(100dvh-3.5rem)] overflow-y-scroll">
+    <div id="document-nav" class="relative h-[calc(100dvh-3.5rem)] overflow-y-scroll">
 
         <div class="fixed w-48 h-[calc(100dvh-3.5rem)] bg-[#181818] border-r-1 border-base">
-            <!-- <select class="block w-full px-4 h-[75px] font-bold bg-[#181818] border-0 border-b-1 border-base" onchange="window.location.href = this.value">
-                {% for i in [1,2,3] %}
-                    <option value="/projects/{{ project.id }}/v/{{ i }}">Version {{ i }}</option>
-                {% endfor %}
-            </select> -->
-
             <div class="flex justify-center w-full p-4 border-b-1 border-base">
                 <a href="/projects/{{ project.id }}/documents/editor" class="btn-primary">
                     New Document
                 </a>
             </div>
 
-            {% for doc in documents %}
-                <a href="/projects/{{ project.id }}/documents/{{ doc.id }}" class="block p-4 text-white hover:bg-[#333]">{{ doc.name }}</a>
-            {% endfor %}
+            <ul class="max-h-[calc(100dvh-3.5rem-75px)] overflow-y-auto">
+                {% for doc in documents %}
+                    <li>
+                        <a
+                            href="/projects/{{ project.id }}/documents/{{ doc.id }}"
+                            class="{% if doc is active_document(path) %}active{% endif %}">
+                            {{ doc.name }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+
         </div>
 
         <div class="flex-grow float-end w-[calc(100dvw-25rem)]">

@@ -3,6 +3,8 @@ use anyhow::{bail, Result};
 use entity::project;
 use tera::Context;
 
+use crate::models::DocumentWithIdAndName;
+
 use super::{claims::Claims, context_data::UserData};
 
 pub struct Extractor;
@@ -49,11 +51,35 @@ impl Extractor {
             return None;
         }
 
+        if parts[1] != "projects" {
+            return None;
+        }
+
         let Ok(project_id) = parts[2].parse::<i32>() else {
             return None;
         };
 
         projects.iter().find(|p| p.id == project_id).cloned()
+    }
+
+    pub fn active_document(
+        path: &str,
+        documents: &[DocumentWithIdAndName],
+    ) -> Option<DocumentWithIdAndName> {
+        let parts = path.split('/').collect::<Vec<&str>>();
+        if parts.len() < 5 {
+            return None;
+        }
+
+        if parts[1] != "projects" || parts[3] != "documents" {
+            return None;
+        }
+
+        let Ok(document_id) = parts[4].parse::<i32>() else {
+            return None;
+        };
+
+        documents.iter().find(|d| d.id == document_id).cloned()
     }
 }
 
