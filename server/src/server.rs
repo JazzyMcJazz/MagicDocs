@@ -83,6 +83,7 @@ fn app(state: AppState) -> Router {
         .route("/new", get(routes::projects::new))
         .route("/:id", get(routes::projects::redirect_to_latest))
         .route("/:id/v/:version", get(routes::projects::detail))
+        .route("/:id/v/:version/chat", post(routes::chat))
         .route("/:id/v/:version/finalize", post(routes::projects::finalize))
         .route("/:id/v/:version/documents", post(routes::document::create))
         .route(

@@ -3,22 +3,16 @@ use axum::{
     middleware::Next,
     response::Response,
 };
-use serde::Deserialize;
+
 use tera::Context;
 
 use crate::{
     database::Repo,
+    models::Slugs,
     responses::HttpResponse,
     server::AppState,
     utils::{context_data::UserData, extractor::Extractor},
 };
-
-#[derive(Debug, Deserialize)]
-pub struct Slugs {
-    id: Option<i32>,
-    version: Option<i32>,
-    doc_id: Option<i32>,
-}
 
 pub async fn context_builder(
     State(app_data): State<AppState>,
@@ -39,10 +33,10 @@ pub async fn context_builder(
         Err(_) => Vec::new(),
     };
 
-    let active_project = Extractor::active_project(path.id, &projects);
+    let active_project = Extractor::active_project(path.id(), &projects);
 
     let documents = match &active_project {
-        Some(project) => match path.version {
+        Some(project) => match path.version() {
             Some(version) => match db
                 .documents()
                 .all_only_id_and_column(project.id, version)
@@ -60,13 +54,13 @@ pub async fn context_builder(
     };
 
     let active_document = match &documents {
-        Some(documents) => Extractor::active_document(path.doc_id, documents),
+        Some(documents) => Extractor::active_document(path.doc_id(), documents),
         None => None,
     };
 
     let mut context = Context::new();
     context.insert("path", req.uri().path());
-    context.insert("project_version", &path.version);
+    context.insert("project_version", &path.version());
     context.insert("user", &user_data);
     context.insert("env", &env);
     context.insert("projects", &projects);

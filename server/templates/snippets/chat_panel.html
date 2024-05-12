@@ -1,6 +1,6 @@
 {% block scripts %}
     {{ super() }}
-    <script type="module" src="/static/js/chat-panel.js"></script>
+    <script type="module" src="/static/js/chat.js"></script>
 {% endblock %}
 
 <div id="chat-panel" class="-bottom-[calc(24rem-3.5rem)]">
@@ -18,17 +18,21 @@
         </div>
     </div>
     <div class="flex justify-center w-full h-[calc(100%-3.5rem)] bg-[#343434] border-1 border-base">
-        <div class="flex flex-col w-full max-w-[700px] h-full p-4">
+        <div class="flex flex-col w-full h-full pb-2">
             <div id="chat-messages" class="flex flex-col-reverse flex-auto overflow-y-auto">
-                <p>Hello</p>
+                <!-- Messages -->
             </div>
-            <div class="input-area flex-initial">
-                <textarea
-                    id="chat-input"
-                    class="w-full p-4 bg-[#343434] text-white resize-none rounded-full"
-                    placeholder="Type a message..."
-                    rows="1"
-                ></textarea>
+            <div class="input-area flex-initial mx-auto w-[calc(100%-16px)] max-w-[700px]">
+                <form id="chat-form" action="/projects/{{ project.id }}/v/{{ project_version }}/chat" method="POST">
+                    <input type="hidden" name="name" value="{{ user.given_name }}">
+                    <textarea
+                        id="chat-input"
+                        name="message"
+                        class="w-full px-4 py-2 bg-[#343434] text-white resize-none rounded-full"
+                        placeholder="Type a message..."
+                        rows="1"
+                    ></textarea>
+                </form>
             </div>
         </div>
     </div>

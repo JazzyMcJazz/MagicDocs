@@ -12,7 +12,7 @@
 }
 
 ::-webkit-scrollbar-thumb {
-	@apply bg-[#404040] mx-2 rounded-full;
+	@apply bg-[#404040] mx-2;
 }
 
 ::-webkit-scrollbar-corner {
@@ -205,4 +205,20 @@ nav a {
 
 #chat-panel.open {
 	@apply bottom-0;
+}
+
+.message {
+	@apply mx-auto mt-8 w-[calc(100%-16px)] max-w-[700px];
+}
+
+.message-header {
+	@apply flex items-center gap-1 -ml-1;
+}
+
+.message-user {
+	@apply text-sm font-bold;
+}
+
+.message-body {
+	@apply ml-5;
 }

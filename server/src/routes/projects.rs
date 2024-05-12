@@ -10,7 +10,7 @@ use http::HeaderMap;
 
 use crate::{
     database::Repo,
-    langchain::Langchain,
+    langchain::{LLMProvider, Langchain},
     models::CreateProjectForm,
     responses::HttpResponse,
     server::AppState,
@@ -101,10 +101,11 @@ pub async fn finalize(
 
     let stream = async_stream::stream! {
         let db = &data.conn;
+        let lc = Langchain::new(LLMProvider::OpenAI);
 
         while let Some(document) = documents.pop() {
             yield Ok(Event::default().data(format!("Embedding Document:\n\"{}\"", document.name)));
-            let embeddings = match Langchain::embed(&document.content).await {
+            let embeddings = match lc.embed(&document.content).await {
                 Ok(embeddings) => embeddings,
                 Err(e) => {
                     tracing::error!("Failed to embed document: {:?}", e);
