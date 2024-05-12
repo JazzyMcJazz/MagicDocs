@@ -3,9 +3,11 @@ use env_logger::Env;
 
 mod database;
 mod keycloak;
+mod langchain;
 mod middleware;
 mod models;
 mod parsing;
+mod responses;
 mod routes;
 mod server;
 mod utils;

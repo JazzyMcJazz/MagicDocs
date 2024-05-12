@@ -116,10 +116,13 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(ProjectVersion::Table)
                     .if_not_exists()
-                    .col(ColumnDef::new(ProjectVersion::Id).integer().primary_key().auto_increment().not_null())
                     .col(ColumnDef::new(ProjectVersion::ProjectId).integer().not_null())
-                    .col(ColumnDef::new(ProjectVersion::Published).boolean().not_null().default(false))
-                    .col(ColumnDef::new(ProjectVersion::CreatedAt).date_time().not_null().default(CURRENT_TIMESTAMP))
+                    .col(ColumnDef::new(ProjectVersion::Version).integer().not_null())
+                    .primary_key(
+                        Index::create()
+                            .col(ProjectVersion::ProjectId)
+                            .col(ProjectVersion::Version)
+                    )
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_project_versions_project_id")
@@ -163,18 +166,22 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(DocumentVersion::Table)
                     .if_not_exists()
-                    .col(ColumnDef::new(DocumentVersion::ProjectVersionId).integer().not_null())
+                    .col(ColumnDef::new(DocumentVersion::ProjectVersionProjectId).integer().not_null())
+                    .col(ColumnDef::new(DocumentVersion::ProjectVersionVersion).integer().not_null())
                     .col(ColumnDef::new(DocumentVersion::DocumentId).integer().not_null())
                     .primary_key(
                         Index::create()
-                            .col(DocumentVersion::ProjectVersionId)
+                            .col(DocumentVersion::ProjectVersionProjectId)
+                            .col(DocumentVersion::ProjectVersionVersion)
                             .col(DocumentVersion::DocumentId)
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk_document_versions_project_version_id")
-                            .from(DocumentVersion::Table, DocumentVersion::ProjectVersionId)
-                            .to(ProjectVersion::Table, ProjectVersion::Id)
+                            .name("fk_document_versions_project_version_project_id")
+                            .from(DocumentVersion::Table, DocumentVersion::ProjectVersionProjectId)
+                            .to(ProjectVersion::Table, ProjectVersion::ProjectId)
+                            .from(DocumentVersion::Table, DocumentVersion::ProjectVersionVersion)
+                            .to(ProjectVersion::Table, ProjectVersion::Version)
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
@@ -250,16 +257,15 @@ enum RolePermission {
 #[derive(DeriveIden)]
 enum ProjectVersion {
     Table,
-    Id,
     ProjectId,
-    CreatedAt,
-    Published,
+    Version,
 }
 
 #[derive(DeriveIden)]
 enum DocumentVersion {
     Table,
-    ProjectVersionId,
+    ProjectVersionProjectId,
+    ProjectVersionVersion,
     DocumentId,
 }
 

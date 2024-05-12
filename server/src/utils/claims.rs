@@ -32,28 +32,28 @@ pub struct Client {
 }
 
 impl Claims {
-    pub fn get_roles(&self) -> Vec<String> {
+    pub fn roles(&self) -> Vec<String> {
         match self.resource_access.magicdocs {
             Some(ref client) => client.roles.clone(),
             None => vec![],
         }
     }
-    pub fn get_sub(&self) -> String {
+    pub fn sub(&self) -> String {
         self.sub.clone()
     }
-    pub fn get_name(&self) -> String {
+    pub fn name(&self) -> String {
         self.name.clone()
     }
-    pub fn get_email(&self) -> String {
+    pub fn email(&self) -> String {
         self.email.clone()
     }
-    pub fn get_username(&self) -> String {
+    pub fn username(&self) -> String {
         self.preferred_username.clone()
     }
-    pub fn get_given_name(&self) -> String {
+    pub fn given_name(&self) -> String {
         self.given_name.clone()
     }
-    pub fn get_family_name(&self) -> String {
+    pub fn family_name(&self) -> String {
         self.family_name.clone()
     }
     pub fn is_admin(&self) -> bool {

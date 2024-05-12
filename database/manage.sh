@@ -30,11 +30,9 @@ function start() {
         --network-alias=db \
         -v magicdocs_db:/var/lib/postgresql/data \
         -e POSTGRES_PASSWORD=$PG_PASS \
-        -e KC_DB_USER=$KC_DB_USER \
-        -e KC_DB_PASS=$KC_DB_PASS \
         -e MD_DB_USER=$MD_DB_USER \
         -e MD_DB_PASS=$MD_DB_PASS \
-        --health-cmd='pg_isready -U postgres -d keycloak && pg_isready -U postgres -d magicdocs' \
+        --health-cmd='pg_isready -U postgres -d magicdocs' \
         --health-start-period=10s \
         --health-start-interval=5s \
         --health-interval=5m \

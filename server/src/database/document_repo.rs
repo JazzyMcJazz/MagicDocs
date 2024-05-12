@@ -3,7 +3,7 @@ use std::vec;
 use anyhow::Result;
 use entity::{
     document::{ActiveModel, Column, Entity, Model, Relation},
-    document_version, project_version,
+    document_version, embedding, project_version,
 };
 use migration::{
     sea_orm::{
@@ -30,20 +30,22 @@ impl<'a> DocumentRepo<'a> {
     pub async fn all_only_id_and_column(
         &self,
         project_id: i32,
+        project_version: i32,
     ) -> Result<Vec<DocumentWithIdAndName>> {
-        // let version_id = 1;
-
         let res = Entity::find()
             .select_only()
             .column(Column::Id)
             .column(Column::Name)
+            .column_as(embedding::Column::Id.count().ne(0), "is_embedded")
             .join(JoinType::InnerJoin, Relation::DocumentVersion.def())
             .join(
                 JoinType::InnerJoin,
                 document_version::Relation::ProjectVersion.def(),
             )
+            .join(JoinType::LeftJoin, Relation::Embedding.def())
             .filter(project_version::Column::ProjectId.eq(project_id))
-            // .filter(project_version::Column::Id.eq(version_id))
+            .filter(project_version::Column::Version.eq(project_version))
+            .group_by(Column::Id)
             .into_model::<DocumentWithIdAndName>()
             .all(self.0)
             .await?;
@@ -53,19 +55,41 @@ impl<'a> DocumentRepo<'a> {
 
     pub async fn find_by_id(&self, id: i32) -> Result<Option<Model>> {
         let res = Entity::find().filter(Column::Id.eq(id)).one(self.0).await?;
+        Ok(res)
+    }
+
+    pub async fn find_unembedded(
+        &self,
+        project_id: i32,
+        project_version: i32,
+    ) -> Result<Vec<Model>> {
+        let res = Entity::find()
+            .join(JoinType::InnerJoin, Relation::DocumentVersion.def())
+            .join(
+                JoinType::InnerJoin,
+                document_version::Relation::ProjectVersion.def(),
+            )
+            .join(JoinType::LeftJoin, Relation::Embedding.def())
+            .filter(project_version::Column::ProjectId.eq(project_id))
+            .filter(project_version::Column::Version.eq(project_version))
+            .group_by(Column::Id)
+            .having(embedding::Column::Id.count().eq(0))
+            .all(self.0)
+            .await?;
 
         Ok(res)
     }
 
-    pub async fn create(&self, project_id: i32, name: String, content: String) -> Result<i32> {
-        let project_version = self
-            .0
-            .projects_versions()
-            .find_latest_by_project_id(project_id)
-            .await?;
+    pub async fn create(
+        &self,
+        project_id: i32,
+        name: String,
+        content: String,
+    ) -> Result<(i32, i32)> {
+        let project_version = self.0.projects_versions().find_latest(project_id).await?;
 
-        let project_version_id = match project_version {
-            Some(version) => version.id,
+        let (project_version_id, project_version_version) = match project_version {
+            Some(version) => (version.project_id, version.version),
             None => self.0.projects_versions().create(project_id).await?,
         };
 
@@ -84,7 +108,12 @@ impl<'a> DocumentRepo<'a> {
         match self
             .0
             .documents_versions()
-            .create(project_version_id, document_id, Some(&tnx))
+            .create(
+                project_version_id,
+                project_version_version,
+                document_id,
+                Some(&tnx),
+            )
             .await
         {
             Ok(_) => tnx.commit().await?,
@@ -94,7 +123,7 @@ impl<'a> DocumentRepo<'a> {
             }
         };
 
-        Ok(res.last_insert_id)
+        Ok((res.last_insert_id, project_version_version))
     }
 
     pub async fn create_many_from_documents(
@@ -102,14 +131,10 @@ impl<'a> DocumentRepo<'a> {
         project_id: i32,
         data: Vec<HtmlParser<Done>>,
     ) -> Result<()> {
-        let project_version = self
-            .0
-            .projects_versions()
-            .find_latest_by_project_id(project_id)
-            .await?;
+        let project_version = self.0.projects_versions().find_latest(project_id).await?;
 
-        let project_version_id = match project_version {
-            Some(version) => version.id,
+        let (project_version_project_id, project_version_version) = match project_version {
+            Some(version) => (version.project_id, version.version),
             None => self.0.projects_versions().create(project_id).await?,
         };
 
@@ -148,7 +173,12 @@ impl<'a> DocumentRepo<'a> {
 
         self.0
             .documents_versions()
-            .create_many(project_version_id, document_ids, Some(&tnx))
+            .create_many(
+                project_version_project_id,
+                project_version_version,
+                document_ids,
+                Some(&tnx),
+            )
             .await?;
 
         tnx.commit().await?;

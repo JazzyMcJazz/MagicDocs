@@ -1,15 +1,11 @@
-use actix_web::{web, HttpRequest, HttpResponse};
+use axum::{extract::State, response::Response, Extension};
 
-use crate::{server::AppState, utils::extractor::Extractor};
+use crate::{server::AppState, utils::traits::TryRender};
 
 // GET /
-pub async fn index(data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
-    let tera = &data.tera;
-    let context = Extractor::context(&req);
-
-    let Ok(html) = tera.render("index.html", &context) else {
-        return HttpResponse::InternalServerError().body("Template error");
-    };
-
-    HttpResponse::Ok().body(html)
+pub async fn index(
+    State(state): State<AppState>,
+    Extension(context): Extension<tera::Context>,
+) -> Response {
+    state.tera.try_render("index.html", &context)
 }

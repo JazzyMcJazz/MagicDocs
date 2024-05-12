@@ -9,14 +9,27 @@ impl<'a> DocumentVersionRepo<'a> {
         Self(db)
     }
 
+    // pub async fn find_latest(&self, id: i32) -> Result<Option<i32>> {
+    //     let result = Entity::find()
+    //         .filter(Entity::Column::DocumentId.eq(id))
+    //         .order_by(Entity::Column::Id.desc())
+    //         .one(self.0)
+    //         .await
+    //         .context("Failed to get latest document version")?;
+
+    //     Ok(result.map(|model| model.id))
+    // }
+
     pub async fn create(
         &self,
-        project_version_id: i32,
+        project_version_project_id: i32,
+        project_version_version: i32,
         document_id: i32,
         tnx: Option<&DatabaseTransaction>,
     ) -> Result<()> {
         let model = ActiveModel {
-            project_version_id: Set(project_version_id),
+            project_version_project_id: Set(project_version_project_id),
+            project_version_version: Set(project_version_version),
             document_id: Set(document_id),
         };
 
@@ -36,14 +49,16 @@ impl<'a> DocumentVersionRepo<'a> {
 
     pub async fn create_many(
         &self,
-        project_version_id: i32,
+        project_version_project_id: i32,
+        project_version_version: i32,
         document_ids: Vec<i32>,
         tnx: Option<&DatabaseTransaction>,
     ) -> Result<()> {
         let models = document_ids
             .iter()
             .map(|&document_id| ActiveModel {
-                project_version_id: Set(project_version_id),
+                project_version_project_id: Set(project_version_project_id),
+                project_version_version: Set(project_version_version),
                 document_id: Set(document_id),
             })
             .collect::<Vec<_>>();

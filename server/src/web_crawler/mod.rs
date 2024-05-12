@@ -9,9 +9,9 @@ mod tests {
     use crate::web_crawler::crawler::StreamOutput;
 
     use super::crawler::Crawler;
-    use actix_web::test;
     use futures_util::{pin_mut, StreamExt};
     use mockito::Server;
+    use tokio::test;
 
     #[test]
     async fn test_crawler_with_no_max_depth() {

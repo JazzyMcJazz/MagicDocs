@@ -18,13 +18,13 @@ pub struct UserData {
 impl UserData {
     pub fn from_claims(claims: &Claims) -> Self {
         Self {
-            id: claims.get_sub(),
-            email: claims.get_email(),
-            name: claims.get_name(),
-            preferred_username: claims.get_username(),
-            given_name: claims.get_given_name(),
-            family_name: claims.get_family_name(),
-            roles: claims.get_roles(),
+            id: claims.sub(),
+            email: claims.email(),
+            name: claims.name(),
+            preferred_username: claims.username(),
+            given_name: claims.given_name(),
+            family_name: claims.family_name(),
+            roles: claims.roles(),
             is_admin: claims.is_admin(),
             is_super_admin: claims.is_super_admin(),
         }

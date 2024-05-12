@@ -4,6 +4,7 @@ pub mod prelude;
 
 pub mod document;
 pub mod document_version;
+pub mod embedding;
 pub mod project;
 pub mod project_version;
 pub mod role_permission;

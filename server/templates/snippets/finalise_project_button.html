@@ -1,0 +1,6 @@
+
+{% if not is_finalized %}
+    <form id="finalize-project-button" method="post" action="/projects/{{ project.id }}/v/{{ project_version }}/finalize">
+        <button class="btn-primary cursor-pointer">Finalize Version</button>
+    </form>
+{% endif %}

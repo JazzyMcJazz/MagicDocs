@@ -56,6 +56,10 @@ function build() {
 
 function generate_entities() {
     sea generate entity -o $DIR/entity/src -l --with-serde serialize
+
+    # Replace the generated code lines with custom code
+    sed -i 's/ Eq, / /g' $DIR/entity/src/embedding.rs
+    sed -i 's/pub embedding: String,/pub embedding: Vec<f32>,/g' $DIR/entity/src/embedding.rs
 }
 
 function download_tailwind() {

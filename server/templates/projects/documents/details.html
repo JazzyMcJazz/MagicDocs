@@ -1,8 +1,12 @@
 {% extends 'projects/layout.html' %}
 
 {% block content %}
-    <div class="p-10">
-        <h1>{{ document.name }}</h1>
+    <div class="relative p-10">
+        <div class="flex justify-between items-center">
+            <h1>{{ document.name }}</h1>
+
+            {% include 'snippets/finalise_project_button.html' %}
+        </div>
 
         <hr class="my-8"/>
 

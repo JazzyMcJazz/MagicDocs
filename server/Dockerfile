@@ -36,8 +36,10 @@ COPY Cargo.toml Cargo.lock ./
 COPY migration migration
 COPY entity entity
 
-# Build the dependencies for release and test
-RUN RUSTFLAGS="-C target-feature=-crt-static" cargo build --release
+ENV RUSTFLAGS="-C target-feature=-crt-static"
+
+# Build the dependencies for release
+RUN cargo build --release
 
 # Remove artifacts from the previous build
 RUN rm -f /app/target/release/deps/magicdocs*
@@ -46,10 +48,10 @@ RUN rm -f /app/target/release/deps/magicdocs*
 COPY src src
 
 # Run unit tests
-RUN RUSTFLAGS="-C target-feature=-crt-static" cargo test
+RUN cargo test
 
 # Build the project
-RUN RUSTFLAGS="-C target-feature=-crt-static" cargo build --release
+RUN cargo build --release
 
 # Copy the static files
 COPY static static

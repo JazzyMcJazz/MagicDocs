@@ -158,9 +158,9 @@ impl SpiderResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use actix_web::test;
     use mockito::*;
     use std::fs;
+    use tokio::test;
 
     #[test]
     async fn test_spider() {

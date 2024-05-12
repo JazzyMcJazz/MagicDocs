@@ -3,14 +3,14 @@
 {% block content %}
     <div class="flex items-end gap-8 w-full h-[75px] bg-[#181818] pl-8">
         <a
-            href="/projects/{{ project.id }}/documents/editor"
+            href="/projects/{{ project.id }}/v/{{ project_version }}/documents/editor"
             class="editor-tab {% if path is ending_with('editor') %}active-editor-tab{% endif %}"
         >
             Editor
         </a>
 
         <a
-            href="/projects/{{ project.id }}/documents/crawler"
+            href="/projects/{{ project.id }}/v/{{ project_version }}/documents/crawler"
             class="editor-tab  {% if path is ending_with('crawler') %}active-editor-tab{% endif %}">
             Crawler
         </a>

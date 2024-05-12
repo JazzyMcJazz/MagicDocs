@@ -7,7 +7,9 @@ use serde::Serialize;
 #[sea_orm(table_name = "document_version")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    pub project_version_id: i32,
+    pub project_version_project_id: i32,
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub project_version_version: i32,
     #[sea_orm(primary_key, auto_increment = false)]
     pub document_id: i32,
 }
@@ -24,8 +26,8 @@ pub enum Relation {
     Document,
     #[sea_orm(
         belongs_to = "super::project_version::Entity",
-        from = "Column::ProjectVersionId",
-        to = "super::project_version::Column::Id",
+        from = "Column::ProjectVersionProjectId",
+        to = "super::project_version::Column::ProjectId",
         on_update = "Cascade",
         on_delete = "Cascade"
     )]
@@ -41,6 +43,19 @@ impl Related<super::document::Entity> for Entity {
 impl Related<super::project_version::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::ProjectVersion.def()
+    }
+}
+
+impl Related<super::project::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::project_version::Relation::Project.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(
+            super::project_version::Relation::DocumentVersion
+                .def()
+                .rev(),
+        )
     }
 }
 

@@ -1,12 +1,18 @@
 use std::{env, str::FromStr};
 
-use actix_files as fs;
-use actix_web::{dev::ServiceRequest, middleware::Logger, web, App, HttpResponse, HttpServer};
+// use actix_web::{dev::ServiceRequest, middleware::Logger, web, App, HttpResponse, HttpServer};
+use axum::{
+    middleware::{from_fn, from_fn_with_state},
+    routing::{get, head, post},
+    Router,
+};
+use http::StatusCode;
 use migration::{
     sea_orm::{ConnectOptions, Database, DatabaseConnection},
     Migrator, MigratorTrait,
 };
 use tera::Tera;
+use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::log;
 
 use crate::{keycloak::Keycloak, middleware, routes, utils::tera_testers};
@@ -18,17 +24,15 @@ pub struct AppState {
     pub keycloak: Keycloak,
 }
 
-#[actix_web::main]
+#[tokio::main]
 pub async fn run() -> std::io::Result<()> {
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL in .env");
     let log_level = env::var("MY_LOG").unwrap_or_else(|_| "info".to_string());
-    let rust_env = env::var("RUST_ENV").unwrap_or_else(|_| "prod".to_string());
+    let filter = log::LevelFilter::from_str(&log_level).unwrap_or(log::LevelFilter::Info);
 
     // Establish connection to the database
     let mut opt = ConnectOptions::new(db_url);
-    opt.sqlx_logging(false).sqlx_logging_level(
-        log::LevelFilter::from_str(&log_level).unwrap_or(log::LevelFilter::Info),
-    );
+    opt.sqlx_logging(false).sqlx_logging_level(filter);
     let conn = Database::connect(opt)
         .await
         .expect("Failed to connect to the database");
@@ -52,90 +56,80 @@ pub async fn run() -> std::io::Result<()> {
         keycloak,
     };
 
-    // Start the HTTP server
-    let mut server = HttpServer::new(move || {
-        let cache_control = if rust_env == "dev" {
-            "no-store"
-            // "max-age=600"
-        } else {
-            "max-age=600"
-        };
+    let app = app(state);
 
-        App::new()
-            .wrap(Logger::default())
-            .app_data(web::Data::new(state.clone()))
-            .service(
-                web::scope("/health")
-                    .route("", web::head().to(HttpResponse::Ok))
-                    .route("", web::get().to(HttpResponse::Ok)),
-            )
-            .service(
-                web::scope("/browser-sync").route("", web::get().to(routes::browser_sync::sse)),
-            )
-            .service(
-                web::scope("/static")
-                    .wrap(
-                        actix_web::middleware::DefaultHeaders::new()
-                            .add(("Cache-Control", cache_control)),
-                    )
-                    .service(
-                        fs::Files::new("", "static")
-                            .index_file("invalid")
-                            .default_handler(|req: ServiceRequest| async {
-                                Ok(req.into_response(HttpResponse::NotFound()))
-                            }),
-                    ),
-            )
-            .service(
-                web::scope("")
-                    .wrap(middleware::ContextBuilder) // 2
-                    .wrap(middleware::Authentication) // 1
-                    .configure(init),
-            )
-    });
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
+        .await
+        .unwrap();
 
-    server = server.bind("0.0.0.0:3000")?;
-    server.run().await?;
+    axum::serve(listener, app).await.unwrap();
 
     Ok(())
 }
 
-fn init(cfg: &mut web::ServiceConfig) {
-    cfg.route("/", web::get().to(routes::index));
-    cfg.route("/logout", web::post().to(routes::logout));
-    cfg.route("/flush", web::post().to(routes::refresh));
+fn app(state: AppState) -> Router {
+    let static_files_router = Router::new()
+        .nest_service("/", ServeDir::new("static"))
+        .layer(from_fn(middleware::headers::cache_control));
 
-    cfg.service(
-        web::scope("/projects")
-            .wrap(middleware::Authorization { admin: true })
-            .route("/new", web::get().to(routes::projects::new))
-            .route("", web::post().to(routes::projects::list))
-            .route("/{id}", web::get().to(routes::projects::detail))
-            .route("/{id}/documents", web::post().to(routes::document::list))
-            .route(
-                "/{id}/documents/editor",
-                web::get().to(routes::document::new),
-            )
-            .route(
-                "/{id}/documents/crawler",
-                web::get().to(routes::document::new),
-            )
-            .route(
-                "/{id}/documents/crawler",
-                web::post().to(routes::document::crawler),
-            )
-            .route(
-                "/{id}/documents/{doc_id}",
-                web::get().to(routes::document::detail),
-            ),
-    );
+    let health_router = Router::new()
+        .route("/", get(StatusCode::OK))
+        .route("/", head(StatusCode::OK));
 
-    cfg.service(
-        web::scope("/admin")
-            .wrap(middleware::Authorization { admin: true })
-            .route("", web::get().to(routes::admin::dashboard))
-            .route("/users", web::get().to(routes::admin::users))
-            .route("/roles", web::get().to(routes::admin::roles))
-            .route("/permissions", web::get().to(routes::admin::permissions)),
-    );
+    let browser_sync_router = Router::new().route("/", get(routes::browser_sync::sse));
+
+    let project_router = Router::new()
+        .route("/", post(routes::projects::create))
+        .route("/new", get(routes::projects::new))
+        .route("/:id", get(routes::projects::redirect_to_latest))
+        .route("/:id/v/:version", get(routes::projects::detail))
+        .route("/:id/v/:version/finalize", post(routes::projects::finalize))
+        .route("/:id/v/:version/documents", post(routes::document::create))
+        .route(
+            "/:id/v/:version/documents/editor",
+            get(routes::document::new),
+        )
+        .route(
+            "/:id/v/:version/documents/crawler",
+            get(routes::document::new),
+        )
+        .route(
+            "/:id/v/:version/documents/crawler",
+            post(routes::document::crawler),
+        )
+        .route(
+            "/:id/v/:version/documents/:doc_id",
+            get(routes::document::detail),
+        )
+        .layer(from_fn_with_state(true, middleware::authorization));
+
+    let admin_router = Router::new()
+        .route("/", get(routes::admin::dashboard))
+        .route("/users", get(routes::admin::users))
+        .route("/roles", get(routes::admin::roles))
+        .route("/permissions", get(routes::admin::permissions));
+
+    let main_router = Router::new()
+        .route("/", get(routes::index))
+        .route("/logout", post(routes::logout))
+        .route("/flush", post(routes::refresh))
+        .nest("/projects", project_router)
+        .nest("/admin", admin_router)
+        .layer(from_fn_with_state(
+            state.clone(),
+            middleware::context_builder,
+        ))
+        .layer(from_fn_with_state(
+            state.clone(),
+            middleware::authentication,
+        ));
+
+    Router::new()
+        .nest("/health", health_router)
+        .nest("/static", static_files_router)
+        .nest("/browser-sync", browser_sync_router)
+        .nest("/", main_router)
+        .layer(from_fn(middleware::headers::default))
+        .layer(TraceLayer::new_for_http())
+        .with_state(state)
 }

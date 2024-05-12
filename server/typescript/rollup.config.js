@@ -10,6 +10,8 @@ export default {
         global: 'src/global.ts',
         editor: 'src/editor.ts',
         crawler: 'src/crawler.ts',
+        "project-finalize-sse": 'src/project-finalize-sse.ts',
+        'chat-panel': 'src/chat-panel.ts',
         'browser-sync-client': 'src/browser-sync-client.ts',
     },
     output: {

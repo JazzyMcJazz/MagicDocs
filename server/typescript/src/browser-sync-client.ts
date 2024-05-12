@@ -1,10 +1,12 @@
 let init = false;
 let displayingSpinner = false;
 
-function browserSync() {
-    const sse = new EventSource('/browser-sync');
+let sse: EventSource | null = null;
 
-    const onopen = () => {
+function open() {
+    sse = new EventSource('/browser-sync');
+
+    sse.onopen = () => {
         if (init) {
             window.location.reload();
         } else {
@@ -12,13 +14,15 @@ function browserSync() {
         }
     }
 
-    sse.onopen = onopen;
-
     sse.onerror = () => {
-        sse.close();
+        sse?.close();
         displaySpinner();
-        setTimeout(browserSync, 500);
+        setTimeout(open, 500);
     }
+}
+
+function close() {
+    sse?.close();
 }
 
 function displaySpinner() {
@@ -37,4 +41,5 @@ function displaySpinner() {
     document.body.appendChild(spinner);
 }
 
-htmx.onLoad(browserSync);
+htmx.onLoad(open);
+window.addEventListener('beforeunload', close);

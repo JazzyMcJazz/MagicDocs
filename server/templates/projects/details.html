@@ -2,8 +2,14 @@
 
 {% block content %}
     <div class="p-10">
-        <h1>{{ project.name }}</h1>
-        <p>{{ project.description }}</p>
+        <div class="flex justify-between items-center">
+            <div>
+                <h1>{{ project.name }}</h1>
+                <p>{{ project.description }}</p>
+            </div>
+
+            {% include 'snippets/finalise_project_button.html' %}
+        </div>
 
         <hr class="my-8"/>
     </div>

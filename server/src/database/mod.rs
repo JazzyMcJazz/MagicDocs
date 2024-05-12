@@ -1,10 +1,12 @@
 mod document_repo;
 mod document_version_repo;
+mod embedding_repo;
 mod project_repo;
 mod project_version_repo;
 
 use document_repo::DocumentRepo;
 use document_version_repo::DocumentVersionRepo;
+use embedding_repo::EmbeddingRepo;
 use project_repo::ProjectRepo;
 use project_version_repo::ProjectVersionRepo;
 
@@ -15,6 +17,7 @@ pub trait Repo {
     fn projects_versions(&self) -> ProjectVersionRepo;
     fn documents_versions(&self) -> DocumentVersionRepo;
     fn documents(&self) -> DocumentRepo;
+    fn embeddings(&self) -> EmbeddingRepo;
 }
 
 impl Repo for DatabaseConnection {
@@ -29,5 +32,8 @@ impl Repo for DatabaseConnection {
     }
     fn documents(&self) -> DocumentRepo {
         DocumentRepo::new(self)
+    }
+    fn embeddings(&self) -> EmbeddingRepo {
+        EmbeddingRepo::new(self)
     }
 }

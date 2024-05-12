@@ -9,13 +9,13 @@ pub struct TokenResponse {
 }
 
 impl TokenResponse {
-    pub fn access_token(&self) -> &str {
+    pub fn access_token(&self) -> &String {
         &self.access_token
     }
-    pub fn refresh_token(&self) -> &str {
+    pub fn refresh_token(&self) -> &String {
         &self.refresh_token
     }
-    pub fn id_token(&self) -> &str {
+    pub fn id_token(&self) -> &String {
         &self.id_token
     }
     pub fn expires_in(&self) -> i64 {

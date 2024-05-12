@@ -1,5 +1,5 @@
-use actix_web::HttpMessage;
 use anyhow::{bail, Result};
+use axum::extract::Request;
 use entity::project;
 use tera::Context;
 
@@ -10,21 +10,7 @@ use super::{claims::Claims, context_data::UserData};
 pub struct Extractor;
 
 impl Extractor {
-    pub fn query((query_string, query_param): (&str, &str)) -> Option<String> {
-        match query_string.split('&').find(|q| q.contains(query_param)) {
-            Some(code) => {
-                let code = code.split('=').collect::<Vec<&str>>()[1];
-                Some(code.to_string())
-            }
-            None => None,
-        }
-    }
-
-    pub fn uri(scheme: &str, host: &str, uri: &str) -> String {
-        format!("{}://{}{}", scheme, host, uri)
-    }
-
-    pub fn claims(req: &impl HttpMessage) -> Result<Claims> {
+    pub fn claims(req: &Request) -> Result<Claims> {
         let ext = req.extensions();
         match ext.get::<Claims>() {
             Some(claims) => Ok(claims.clone()),
@@ -32,7 +18,7 @@ impl Extractor {
         }
     }
 
-    pub fn _user_data(req: &impl HttpMessage) -> Result<UserData> {
+    pub fn _user_data(req: &Request) -> Result<UserData> {
         let ext = req.extensions();
         match ext.get::<UserData>() {
             Some(user_data) => Ok(user_data.clone()),
@@ -40,95 +26,36 @@ impl Extractor {
         }
     }
 
-    pub fn context(req: &impl HttpMessage) -> Context {
+    pub fn context(req: &Request) -> Context {
         let ext = req.extensions();
         ext.get::<Context>().cloned().unwrap_or(Context::new())
     }
 
-    pub fn active_project(path: &str, projects: &[project::Model]) -> Option<project::Model> {
-        let parts = path.split('/').collect::<Vec<&str>>();
-        if parts.len() < 3 {
-            return None;
+    pub fn active_project(
+        project_id: Option<i32>,
+        projects: &[project::Model],
+    ) -> Option<project::Model> {
+        match project_id {
+            Some(project_id) => projects.iter().find(|p| p.id == project_id).cloned(),
+            None => None,
         }
-
-        if parts[1] != "projects" {
-            return None;
-        }
-
-        let Ok(project_id) = parts[2].parse::<i32>() else {
-            return None;
-        };
-
-        projects.iter().find(|p| p.id == project_id).cloned()
     }
 
     pub fn active_document(
-        path: &str,
+        document_id: Option<i32>,
         documents: &[DocumentWithIdAndName],
     ) -> Option<DocumentWithIdAndName> {
-        let parts = path.split('/').collect::<Vec<&str>>();
-        if parts.len() < 5 {
-            return None;
+        match document_id {
+            Some(document_id) => documents.iter().find(|d| d.id == document_id).cloned(),
+            None => None,
         }
-
-        if parts[1] != "projects" || parts[3] != "documents" {
-            return None;
-        }
-
-        let Ok(document_id) = parts[4].parse::<i32>() else {
-            return None;
-        };
-
-        documents.iter().find(|d| d.id == document_id).cloned()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use actix_web::http::Uri;
-    use rstest::*;
-
-    #[rstest]
-    #[case("param1=value1&code=abc123&param2=value2", "code", Some("abc123".to_owned()))]
-    #[case("code=abc123", "code", Some("abc123".to_owned()))]
-    #[case("param1=value1&param2=value2", "code", None)]
-    #[case("", "value", None)]
-    fn test_code_extraction_with_code(
-        #[case] query: &str,
-        #[case] param: &str,
-        #[case] expected_code: Option<String>,
-    ) {
-        let extracted_code = Extractor::query((query, param));
-        assert_eq!(extracted_code, expected_code);
     }
 
-    #[rstest]
-    #[case(
-        "http",
-        "localhost:8080",
-        "/path/to/resource",
-        "http://localhost:8080/path/to/resource"
-    )]
-    #[case(
-        "https",
-        "example.com",
-        "/path/to/resource",
-        "https://example.com/path/to/resource"
-    )]
-    #[case("http", "localhost:8080", "/", "http://localhost:8080/")]
-    #[case("https", "example.com", "/", "https://example.com/")]
-    #[case("http", "localhost:8080", "", "http://localhost:8080")]
-    #[case("https", "example.com", "?param=value", "https://example.com/")]
-    #[case("http", "localhost:8080", "?param=value", "http://localhost:8080/")]
-    fn test_uri_extraction(
-        #[case] scheme: &str,
-        #[case] host: &str,
-        #[case] path: &str,
-        #[case] expected_uri: &str,
-    ) {
-        let uri = Uri::builder().path_and_query(path).build().unwrap();
-        let extracted_uri = Extractor::uri(scheme, host, uri.path());
-        assert_eq!(extracted_uri, expected_uri);
+    pub fn project_version_finalized(
+        documents: &Option<Vec<DocumentWithIdAndName>>,
+    ) -> Option<bool> {
+        documents
+            .as_ref()
+            .map(|documents| documents.iter().all(|d| d.is_embedded))
     }
 }

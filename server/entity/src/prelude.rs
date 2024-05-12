@@ -2,6 +2,7 @@
 
 pub use super::document::Entity as Document;
 pub use super::document_version::Entity as DocumentVersion;
+pub use super::embedding::Entity as Embedding;
 pub use super::project::Entity as Project;
 pub use super::project_version::Entity as ProjectVersion;
 pub use super::role_permission::Entity as RolePermission;

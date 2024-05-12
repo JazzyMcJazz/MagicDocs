@@ -1,6 +1,5 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
 use reqwest::Url;
-use scraper::{Html, Selector};
 
 pub struct Waiting;
 pub struct Done;
@@ -28,27 +27,11 @@ impl HtmlParser<Waiting> {
         let content = self.content;
         let source = self.source;
 
-        let Ok(selector) = Selector::parse("a") else {
-            bail!("Failed to parse {}", self.name)
-        };
-        let mut document = Html::parse_document(&content);
-        let node_ids: Vec<_> = document.select(&selector).map(|node| node.id()).collect();
-        for id in node_ids {
-            match document.tree.get_mut(id) {
-                Some(mut node) => {
-                    node.detach();
-                }
-                None => {
-                    bail!("Failed to parse {}", self.name);
-                }
-            }
-        }
-
-        let content = html2text::from_read(document.html().as_bytes(), 80);
+        let result = html2md::parse_html(&content);
 
         Ok(HtmlParser {
             name: self.name,
-            content,
+            content: result,
             source,
             state: Default::default(),
         })

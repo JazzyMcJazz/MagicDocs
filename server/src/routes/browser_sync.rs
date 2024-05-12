@@ -1,33 +1,46 @@
-use std::{env, time::Duration};
+use std::{convert::Infallible, env, time::Duration};
 
-use actix_web::{
-    http::{
-        header::{CACHE_CONTROL, CONTENT_TYPE},
-        Error,
-    },
-    rt::time::sleep,
-    web::Bytes,
-    HttpResponse,
-};
+use crate::responses::HttpResponse;
+use axum::response::{sse::Event, Response, Sse};
+use futures_util::Stream;
+use tokio::time::interval;
+
+static CONNECTIONS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+struct Guard;
+
+impl Drop for Guard {
+    fn drop(&mut self) {
+        CONNECTIONS.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+        tracing::debug!(
+            "Browser sync Connected: {}",
+            CONNECTIONS.load(std::sync::atomic::Ordering::Relaxed)
+        );
+    }
+}
 
 // GET /
-pub async fn sse() -> Result<HttpResponse, Error> {
+pub async fn sse() -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, Response> {
     if env::var("RUST_ENV").unwrap_or_else(|_| "prod".to_string()) != "dev" {
-        return Ok(HttpResponse::NotFound().finish());
+        return Err(HttpResponse::NotFound().finish());
     }
 
-    let duration = Duration::from_secs(u64::MAX);
-    let response_body = async_stream::stream! {
+    CONNECTIONS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+    let mut interval = interval(Duration::from_secs(1));
+    let stream = async_stream::stream! {
+        tracing::debug!("Browser sync Connected: {}", CONNECTIONS.load(std::sync::atomic::Ordering::Relaxed));
+        let _guard = Guard;
         loop {
-            sleep(duration).await;
-            yield Ok::<Bytes, Error>(Bytes::from(String::new()));
+            interval.tick().await;
+            yield Ok(Event::default().data(""));
         }
     };
 
-    let response = HttpResponse::Ok()
-        .insert_header((CONTENT_TYPE, "text/event-stream"))
-        .insert_header((CACHE_CONTROL, "no-cache"))
-        .streaming(response_body);
+    let sse = Sse::new(stream).keep_alive(
+        axum::response::sse::KeepAlive::new()
+            .interval(Duration::from_secs(1))
+            .text("keep-alive-text"),
+    );
 
-    Ok(response)
+    Ok(sse)
 }

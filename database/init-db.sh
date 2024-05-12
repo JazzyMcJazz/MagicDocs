@@ -14,5 +14,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
 EOSQL
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -d magicdocs <<-EOSQL
+    CREATE EXTENSION vector SCHEMA "public";
     GRANT ALL ON SCHEMA public TO $MD_DB_USER;
 EOSQL

@@ -1,6 +1,7 @@
 {% extends 'projects/documents/new/layout.html' %}
 
 {% block scripts %}
+    {{ super() }}
     <script type="module" src="/static/js/editor.js"></script>
 {% endblock %}
 
@@ -11,7 +12,7 @@
         {% else %}
             <h1 class="text-2xl font-bold text-white">New Document</h1>
         {% endif %}
-        <form action="/projects/{{ project.id }}/documents" method="POST">
+        <form action="/projects/{{ project.id }}/v/{{ project_version }}/documents" method="POST">
             <div>
                 <label for="document-title" class="text-white mt-8 ml-1 font-bold">Title</label>
                 <input

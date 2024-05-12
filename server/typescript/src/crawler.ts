@@ -1,4 +1,4 @@
-import { OnReadystatechange, ReadyStateEvent, SSE, SSEvent } from "sse.js";
+import { ReadyStateEvent, SSE, SSEvent } from "sse.js";
 
 function submitListener() {
     const form = document.getElementById('crawler-form') as HTMLFormElement;
@@ -37,7 +37,6 @@ function submitListener() {
         });
 
         source.onreadystatechange = (event: ReadyStateEvent) => {
-            console.log(event);
             if (event.readyState === 1) {
                 outputContainer.classList.add('flex');
                 outputContainer.classList.remove('hidden');
@@ -46,7 +45,6 @@ function submitListener() {
             }
         }
         source.onmessage = (event: SSEvent) => {
-            console.log(event.data);
             output.textContent = event.data;
         }
 

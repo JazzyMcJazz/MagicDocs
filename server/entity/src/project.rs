@@ -41,4 +41,13 @@ impl Related<super::user_permission::Entity> for Entity {
     }
 }
 
+impl Related<super::document_version::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::project_version::Relation::DocumentVersion.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::project_version::Relation::Project.def().rev())
+    }
+}
+
 impl ActiveModelBehavior for ActiveModel {}

@@ -55,14 +55,14 @@ impl<'a> ProjectRepo<'a> {
         }
     }
 
-    pub async fn _find_by_id(&self, id: i32) -> Result<Option<Model>> {
-        let res = Entity::find_by_id(id)
-            .one(self.0)
-            .await
-            .context("Failed to find project by id")?;
+    // pub async fn find_by_id(&self, id: i32) -> Result<Option<Model>> {
+    //     let res = Entity::find_by_id(id)
+    //         .one(self.0)
+    //         .await
+    //         .context("Failed to find project by id")?;
 
-        Ok(res)
-    }
+    //     Ok(res)
+    // }
 
     pub async fn create(&self, name: String, description: String) -> Result<i32> {
         let model = ActiveModel {

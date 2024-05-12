@@ -4,12 +4,20 @@
     <title>Magic Docs - {{ project.name }}</title>
 {% endblock %}
 
-{% block main %}
-    <div id="document-nav" class="relative h-[calc(100dvh-3.5rem)] overflow-y-scroll">
+{% block scripts %}
+    {{ super() }}
+    <script type="module" src="/static/js/project-finalize-sse.js"></script>
+{% endblock %}
 
-        <div class="fixed w-48 h-[calc(100dvh-3.5rem)] bg-[#181818] border-r-1 border-base">
+{% block main %}
+    <div class="relative flex h-[calc(100dvh-3.5rem)]">
+
+        <div id="document-nav" class="w-48 h-[calc(100dvh-3.5rem)] bg-[#181818] border-r-1 border-base">
             <div class="flex justify-center w-full p-4 border-b-1 border-base">
-                <a href="/projects/{{ project.id }}/documents/editor" class="btn-primary">
+                <a
+                    href="/projects/{{ project.id }}/v/{{ project_version }}/documents/editor"
+                    class="btn-primary whitespace-nowrap"
+                >
                     New Document
                 </a>
             </div>
@@ -18,7 +26,7 @@
                 {% for doc in documents %}
                     <li>
                         <a
-                            href="/projects/{{ project.id }}/documents/{{ doc.id }}"
+                            href="/projects/{{ project.id }}/v/{{ project_version }}/documents/{{ doc.id }}"
                             class="{% if doc is active_document(path) %}active{% endif %}">
                             {{ doc.name }}
                         </a>
@@ -28,8 +36,15 @@
 
         </div>
 
-        <div class="flex-grow float-end w-[calc(100dvw-25rem)]">
+        <div class="relative flex-grow float-end w-[calc(100dvw-25rem)] overflow-y-auto">
+            {% if not is_finalized and path is not ending_with("/editor") and path is not ending_with("/crawler")  %}
+                <div class="absolute top-0 left-0 right-0 h-6 bg-yellow-600">
+                    <p class="text-center text-white font-bold">Project Version Draft</p>
+                </div>
+            {% endif %}
             {% block content %}{% endblock %}
         </div>
+
+        {% include 'snippets/chat_panel.html' %}
     </div>
 {% endblock %}

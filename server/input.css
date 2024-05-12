@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 ::-webkit-scrollbar {
-	@apply w-2 h-2 bg-transparent rounded-full;
+	@apply w-[6px] h-2 bg-transparent rounded-full;
 }
 
 ::-webkit-scrollbar-track {
@@ -146,6 +146,7 @@ nav a {
 	@apply bg-[#282828] cursor-default;
 }
 
+/* Codemirror Editor */
 .cm-editor {
 	@apply w-full p-4 min-h-48 text-white bg-[#181818] border-2 border-base;
 	@apply cursor-text;
@@ -167,10 +168,41 @@ nav a {
 	@apply !bg-[#256ab0] py-1;
 }
 
+/* Document Markdown */
 #document-content h1, #document-content h2, #document-content h3, #document-content p {
 	@apply my-4
 }
 
 #document-content pre {
 	@apply !bg-[#141414] p-4 rounded-md overflow-x-auto;
+}
+
+#document-content ul {
+	@apply list-disc list-outside;
+}
+
+#document-content li {
+	@apply ml-4;
+}
+
+/* Overlay */
+.overlay {
+	@apply fixed flex justify-center items-center inset-0 bg-black bg-opacity-60 z-50;
+}
+
+.overlay .overlay-content {
+	@apply flex flex-col items-center;
+}
+
+/* Chat Window */
+#chat-panel {
+	@apply fixed right-4 w-80 h-96;
+}
+
+#chat-panel.expanded {
+	@apply absolute w-full h-full right-0;
+}
+
+#chat-panel.open {
+	@apply bottom-0;
 }

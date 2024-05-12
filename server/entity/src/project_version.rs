@@ -6,11 +6,10 @@ use serde::Serialize;
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
 #[sea_orm(table_name = "project_version")]
 pub struct Model {
-    #[sea_orm(primary_key)]
-    pub id: i32,
+    #[sea_orm(primary_key, auto_increment = false)]
     pub project_id: i32,
-    pub published: bool,
-    pub created_at: DateTime,
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub version: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -36,19 +35,6 @@ impl Related<super::document_version::Entity> for Entity {
 impl Related<super::project::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Project.def()
-    }
-}
-
-impl Related<super::document::Entity> for Entity {
-    fn to() -> RelationDef {
-        super::document_version::Relation::Document.def()
-    }
-    fn via() -> Option<RelationDef> {
-        Some(
-            super::document_version::Relation::ProjectVersion
-                .def()
-                .rev(),
-        )
     }
 }
 

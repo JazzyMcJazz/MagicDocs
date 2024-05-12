@@ -19,6 +19,8 @@ pub struct Model {
 pub enum Relation {
     #[sea_orm(has_many = "super::document_version::Entity")]
     DocumentVersion,
+    #[sea_orm(has_many = "super::embedding::Entity")]
+    Embedding,
 }
 
 impl Related<super::document_version::Entity> for Entity {
@@ -27,12 +29,9 @@ impl Related<super::document_version::Entity> for Entity {
     }
 }
 
-impl Related<super::project_version::Entity> for Entity {
+impl Related<super::embedding::Entity> for Entity {
     fn to() -> RelationDef {
-        super::document_version::Relation::ProjectVersion.def()
-    }
-    fn via() -> Option<RelationDef> {
-        Some(super::document_version::Relation::Document.def().rev())
+        Relation::Embedding.def()
     }
 }
 
