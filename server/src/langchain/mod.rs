@@ -1,9 +1,10 @@
 use crate::models::Embedding;
 use anyhow::Result;
 use futures_util::Stream;
+use migration::sea_orm::DatabaseConnection;
 
-pub use self::enums::LLMProvider;
-use self::{models::OpenAiStreamOutput, openai::OpenAI};
+pub use self::enums::{LLMOutput, LLMProvider};
+use self::openai::OpenAI;
 
 mod constants;
 mod enums;
@@ -23,12 +24,13 @@ impl Langchain {
         }
     }
 
-    pub async fn chat_completion(
+    pub fn chat_completion<'a>(
         &self,
-        prompt: &str,
-    ) -> Result<impl Stream<Item = Result<OpenAiStreamOutput>>> {
+        db: &'a DatabaseConnection,
+        prompt: &'a str,
+    ) -> Result<impl Stream<Item = Result<LLMOutput>> + 'a> {
         match self.0 {
-            LLMProvider::OpenAI => OpenAI::completion(prompt).await,
+            LLMProvider::OpenAI => OpenAI::event_loop(db, prompt),
         }
     }
 }

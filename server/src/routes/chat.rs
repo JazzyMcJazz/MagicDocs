@@ -1,10 +1,12 @@
 use std::{convert::Infallible, time::Duration};
 
 use crate::{
-    langchain::{LLMProvider, Langchain},
+    langchain::{LLMOutput, LLMProvider, Langchain},
     models::ChatForm,
+    server::AppState,
 };
 use axum::{
+    extract::State,
     response::{sse::Event, Response, Sse},
     Form,
 };
@@ -15,12 +17,13 @@ struct Guard;
 
 impl Drop for Guard {
     fn drop(&mut self) {
-        tracing::warn!("Chat cancelled. Cleanup not implemented",);
+        tracing::warn!("Chat guard dropped. Cleanup not implemented",);
     }
 }
 
 // GET /
 pub async fn chat(
+    State(data): State<AppState>,
     Form(form): Form<ChatForm>,
 ) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, Response> {
     // TODO: Implement authorization
@@ -29,12 +32,12 @@ pub async fn chat(
     // }
 
     let stream = async_stream::stream! {
-        tracing::info!("Chat started");
         let _guard = Guard;
+        let db = &data.conn;
         let lc = Langchain::new(LLMProvider::OpenAI);
         let prompt = form.message;
 
-        let stream = match lc.chat_completion(&prompt).await {
+        let stream = match lc.chat_completion(db, &prompt) {
             Ok(stream) => stream,
             Err(e) => {
                 tracing::error!("Error: {:?}", e);
@@ -46,8 +49,11 @@ pub async fn chat(
         while let Some(event) = stream.next().await {
             match event {
                 Ok(output) => {
-                    let content = output.content().unwrap_or_default();
-                    yield Ok(Event::default().data(content));
+                    match output {
+                        LLMOutput::Content(content) => {
+                            yield Ok(Event::default().data(content));
+                        }
+                    }
                 }
                 Err(e) => {
                     tracing::error!("Error: {:?}", e);
