@@ -141,6 +141,7 @@ pipeline {
                 KEYCLOAK_ADMIN_USERNAME = credentials('KEYCLOAK_ADMIN_USERNAME')
                 KEYCLOAK_ADMIN_PASSWORD = credentials('KEYCLOAK_ADMIN_PASSWORD')
                 KEYCLOAK_CLIENT_SECRET = credentials('KEYCLOAK_CLIENT_SECRET')
+                OPENAI_API_KEY = credentials('OPENAI_API_KEY')
             }
             steps {
                 echo 'Saving Docker images'
@@ -171,6 +172,7 @@ pipeline {
                                 -e KEYCLOAK_REALM=magicdocs \
                                 -e KEYCLOAK_CLIENT=magicdocs \
                                 -e KEYCLOAK_CLIENT_SECRET=\\$KEYCLOAK_CLIENT_SECRET \
+                                -e OPENAI_API_KEY=\\$OPENAI_API_KEY \
                                 -o docs.treeleaf.dev \
                                 -m admin@treeleaf.dev \
                                 --depends-on db \
