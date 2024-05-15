@@ -11,7 +11,7 @@ use crate::{
     models::Slugs,
     responses::HttpResponse,
     server::AppState,
-    utils::{context_data::UserData, extractor::Extractor},
+    utils::{config::Config, context_data::UserData, extractor::Extractor},
 };
 
 pub async fn context_builder(
@@ -24,8 +24,9 @@ pub async fn context_builder(
         return HttpResponse::InternalServerError().finish();
     };
 
+    let config = Config::default();
     let user_data = UserData::from_claims(&claims);
-    let env = std::env::var("RUST_ENV").unwrap_or_else(|_| "prod".to_string());
+    let env = config.rust_env();
 
     let db = app_data.conn.to_owned();
     let projects = match db.projects().all(&user_data).await {
@@ -33,7 +34,7 @@ pub async fn context_builder(
         Err(_) => Vec::new(),
     };
 
-    let active_project = Extractor::active_project(path.id(), &projects);
+    let active_project = Extractor::active_project(path.project_id(), &projects);
 
     let documents = match &active_project {
         Some(project) => match path.version() {

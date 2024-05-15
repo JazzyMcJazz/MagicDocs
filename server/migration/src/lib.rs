@@ -1,7 +1,7 @@
 pub use sea_orm_migration::prelude::*;
 
-mod m20240422_000001_create_tables;
-mod m20240510_000002_create_embedding_table;
+pub mod m20240422_000001_create_tables;
+pub mod m20240510_000002_create_embedding_table;
 
 pub struct Migrator;
 

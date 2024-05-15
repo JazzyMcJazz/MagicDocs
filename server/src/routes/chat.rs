@@ -2,11 +2,12 @@ use std::{convert::Infallible, time::Duration};
 
 use crate::{
     langchain::{LLMOutput, LLMProvider, Langchain},
-    models::ChatForm,
+    models::{ChatForm, Slugs},
+    responses::HttpResponse,
     server::AppState,
 };
 use axum::{
-    extract::State,
+    extract::{Path, State},
     response::{sse::Event, Response, Sse},
     Form,
 };
@@ -24,6 +25,7 @@ impl Drop for Guard {
 // GET /
 pub async fn chat(
     State(data): State<AppState>,
+    Path(path): Path<Slugs>,
     Form(form): Form<ChatForm>,
 ) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, Response> {
     // TODO: Implement authorization
@@ -31,13 +33,24 @@ pub async fn chat(
     //     return Err(HttpResponse::Forbidden().finish());
     // }
 
+    let Some(project_id) = path.project_id() else {
+        return Err(HttpResponse::BadRequest().finish());
+    };
+    let Some(version) = path.version() else {
+        return Err(HttpResponse::BadRequest().finish());
+    };
+
     let stream = async_stream::stream! {
         let _guard = Guard;
         let db = &data.conn;
         let lc = Langchain::new(LLMProvider::OpenAI);
         let prompt = form.message;
 
-        let stream = match lc.chat_completion(db, &prompt) {
+        let stream = match lc.chat_completion(
+            db,
+            project_id,
+            version,
+            &prompt) {
             Ok(stream) => stream,
             Err(e) => {
                 tracing::error!("Error: {:?}", e);

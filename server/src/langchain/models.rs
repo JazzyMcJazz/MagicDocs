@@ -4,10 +4,53 @@ use serde::{Deserialize, Serialize};
 use super::{
     constants::SYSTEM_PROMPT,
     enums::{
-        OpenaiFinishReason, OpenaiMessageRole, OpenaiModel, OpenaiToolChoice,
-        OpenaiToolFunctionParameterProperties, OpenaiToolName, OpenaiToolType,
+        OpenaiEmbeddingInput, OpenaiEncodingFormat, OpenaiFinishReason, OpenaiMessageRole,
+        OpenaiModel, OpenaiToolChoice, OpenaiToolName, OpenaiToolType,
     },
 };
+
+#[derive(Debug, Clone, Serialize)]
+pub struct OpenaiEmbeddingRequest {
+    input: OpenaiEmbeddingInput,
+    model: OpenaiModel,
+    encoding_format: OpenaiEncodingFormat,
+}
+
+impl OpenaiEmbeddingRequest {
+    pub fn new(input: OpenaiEmbeddingInput) -> Self {
+        Self {
+            input,
+            model: OpenaiModel::TextEmbedding3Small,
+            encoding_format: OpenaiEncodingFormat::Float,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct OpenaiEmbeddingResponse {
+    data: Vec<OpenaiEmbeddingData>,
+}
+
+impl OpenaiEmbeddingResponse {
+    pub fn data(&self) -> &Vec<OpenaiEmbeddingData> {
+        &self.data
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct OpenaiEmbeddingData {
+    index: u64,
+    embedding: Vec<f32>,
+}
+
+impl OpenaiEmbeddingData {
+    pub fn index(&self) -> u64 {
+        self.index
+    }
+    pub fn embedding(&self) -> &Vec<f32> {
+        &self.embedding
+    }
+}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct OpenaiCompletionRequest {
@@ -16,6 +59,7 @@ pub struct OpenaiCompletionRequest {
     tools: Vec<OpenaiTool>,
     tool_choice: OpenaiToolChoice,
     stream: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
     stream_options: Option<OpenaiStreamOptions>,
 }
 
@@ -80,8 +124,11 @@ impl Default for OpenaiCompletionRequest {
 #[derive(Debug, Clone, Serialize)]
 pub struct OpenaiMessage {
     role: OpenaiMessageRole,
+    #[serde(skip_serializing_if = "Option::is_none")]
     content: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     tool_calls: Option<Vec<OpenaiToolCall>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     tool_call_id: Option<String>,
 }
 
@@ -101,7 +148,16 @@ impl OpenaiTool {
                     name: OpenaiToolName::SimilaritySearch,
                     description: "Search embedded documents for relevant information to the query"
                         .to_owned(),
-                    parameters: None,
+                    parameters: Some(OpenaiToolFunctionParameters {
+                        parameter_type: "object".to_owned(),
+                        properties: serde_json::json!({
+                            "query": {
+                                "type": "string",
+                                "description": "The query to search for in the embedded documents. The query is generated from the user's input into a query that is more likely to return relevant information from the database when cosine distance is invoked."
+                            }
+                        }),
+                        required: vec!["query".to_owned()],
+                    }),
                 },
             },
         }
@@ -112,6 +168,7 @@ impl OpenaiTool {
 pub struct OpenaiToolFunction {
     name: OpenaiToolName,
     description: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     parameters: Option<OpenaiToolFunctionParameters>,
 }
 
@@ -119,7 +176,7 @@ pub struct OpenaiToolFunction {
 pub struct OpenaiToolFunctionParameters {
     #[serde(rename = "type")]
     parameter_type: String,
-    properties: OpenaiToolFunctionParameterProperties,
+    properties: serde_json::Value,
     required: Vec<String>,
 }
 
@@ -130,7 +187,7 @@ pub struct OpenaiStreamOptions {
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
-pub struct OpenAiStreamOutput {
+pub struct OpenaiStreamOutput {
     id: String,
     object: String,
     created: u64,
@@ -140,18 +197,13 @@ pub struct OpenAiStreamOutput {
     usage: Option<OpenaiUsage>,
 }
 
-impl OpenAiStreamOutput {
+impl OpenaiStreamOutput {
     pub fn from_chunk(s: &str) -> Result<Self> {
-        let s = s.trim_start_matches("data: ").trim_end_matches("\n\n");
-
         match serde_json::from_str(s).map_err(Into::into) {
             Ok(output) => Ok(output),
             Err(e) => {
-                let err = format!("{:?}", e);
-                if !err.contains("missing field `name` at line 1 column 251") {
-                    tracing::error!("Error: {:?}", e);
-                    tracing::debug!("Error: {:?}", s);
-                }
+                tracing::error!("Error: {:?}", e);
+                tracing::debug!("Error: {:?}", s);
                 Err(e)
             }
         }
@@ -205,31 +257,43 @@ impl OpenaiDelta {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OpenaiToolCall {
     index: u64,
-    id: String,
+    id: Option<String>,
     #[serde(rename = "type")]
-    tool_type: OpenaiToolType,
+    tool_type: Option<OpenaiToolType>,
     function: OpenaiToolFunctionCall,
 }
 
 impl OpenaiToolCall {
-    pub fn id(&self) -> &str {
+    pub fn index(&self) -> u64 {
+        self.index
+    }
+    pub fn id(&self) -> &Option<String> {
         &self.id
     }
     pub fn function(&self) -> &OpenaiToolFunctionCall {
         &self.function
+    }
+    pub fn update_function(&mut self, argument: &str) {
+        self.function.push_argument(argument);
     }
 }
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OpenaiToolFunctionCall {
-    name: OpenaiToolName,
+    name: Option<OpenaiToolName>,
     arguments: String,
 }
 
 impl OpenaiToolFunctionCall {
-    pub fn name(&self) -> &OpenaiToolName {
+    pub fn name(&self) -> &Option<OpenaiToolName> {
         &self.name
+    }
+    pub fn arguments(&self) -> &str {
+        &self.arguments
+    }
+    pub fn push_argument(&mut self, arg: &str) {
+        self.arguments.push_str(arg);
     }
 }
 
@@ -238,7 +302,7 @@ impl OpenaiToolFunctionCall {
 pub struct OpenaiUsage {
     completion_tokens: u64,
     prompt_tokens: u64,
-    tool_tokens: u64,
+    total_tokens: u64,
 }
 
 #[derive(Debug, Deserialize)]

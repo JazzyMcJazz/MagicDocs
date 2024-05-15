@@ -5,7 +5,7 @@ use tokio::sync::Mutex;
 
 // use keycloak::{KeycloakAdmin, KeycloakAdminToken};
 
-use crate::utils::claims::Claims;
+use crate::utils::{claims::Claims, config::Config};
 
 use super::{jwk::Jwks, GrantType, JwksCache};
 
@@ -20,26 +20,15 @@ pub struct Keycloak {
 
 impl Keycloak {
     pub async fn new() -> Result<Self> {
-        let base_url = std::env::var("KEYCLOAK_URL").expect("KEYCLOAK_URL must be set");
-        // let user = std::env::var("KEYCLOAK_USER").expect("KEYCLOAK_USER must be set");
-        // let password = std::env::var("KEYCLOAK_PASSWORD").expect("KEYCLOAK_PASSWORD must be set");
-        let realm_id = std::env::var("KEYCLOAK_REALM").expect("KEYCLOAK_REALM must be set");
-        let client_id = std::env::var("KEYCLOAK_CLIENT").expect("KEYCLOAK_CLIENT must be set");
-        let client_secret =
-            std::env::var("KEYCLOAK_CLIENT_SECRET").expect("KEYCLOAK_CLIENT_SECRET must be set");
-        // let reqwest_client = reqwest::Client::new();
-        // let admin_token =
-        //     KeycloakAdminToken::acquire(&internal_base_url, &user, &password, &reqwest_client).await?;
-
-        // let admin = KeycloakAdmin::new(&internal_base_url, admin_token, reqwest_client);
+        let config = Config::default();
 
         Ok(Self {
             // admin: Arc::new(Mutex::new(admin)),
             jwk_cache: Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(1).unwrap()))),
-            base_url,
-            realm_id,
-            client_id,
-            client_secret,
+            base_url: config.keycloak_url().to_owned(),
+            realm_id: config.keycloak_realm().to_owned(),
+            client_id: config.keycloak_client().to_owned(),
+            client_secret: config.keycloak_client_secret().to_owned(),
         })
     }
 

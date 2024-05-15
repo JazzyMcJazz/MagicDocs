@@ -4,10 +4,13 @@ use time::OffsetDateTime;
 
 use crate::keycloak::TokenResponse;
 
+use super::config::Config;
+
 pub fn from_token_response(
     token_response: TokenResponse,
 ) -> Result<(Cookie<'static>, Cookie<'static>, Cookie<'static>)> {
-    let is_test = std::env::var("RUST_ENV").unwrap_or_else(|_| "".to_string()) == "test";
+    let config = Config::default();
+    let is_test = config.rust_env() == "test";
 
     let now = OffsetDateTime::now_utc().unix_timestamp();
     let expires = OffsetDateTime::from_unix_timestamp(now + token_response.expires_in() - 10)?; // 10 seconds before the token expires
@@ -36,23 +39,26 @@ pub fn from_token_response(
 }
 
 pub fn expire() -> (Cookie<'static>, Cookie<'static>, Cookie<'static>) {
+    let config = Config::default();
+    let is_test = config.rust_env() == "test";
+
     let expires = OffsetDateTime::UNIX_EPOCH;
 
     let cookie1 = Cookie::build(("id", ""))
         .path("/")
-        .secure(true)
+        .secure(!is_test)
         .http_only(true)
         .expires(expires)
         .build();
     let cookie2 = Cookie::build(("ac", ""))
         .path("/")
-        .secure(true)
+        .secure(!is_test)
         .http_only(true)
         .expires(expires)
         .build();
     let cookie3 = Cookie::build(("rf", ""))
         .path("/")
-        .secure(true)
+        .secure(!is_test)
         .http_only(true)
         .expires(expires)
         .build();

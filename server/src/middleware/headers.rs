@@ -4,6 +4,8 @@ use http::{
     HeaderValue,
 };
 
+use crate::utils::config::Config;
+
 pub async fn default(req: Request, next: Next) -> Response {
     let mut res = next.run(req).await;
 
@@ -16,7 +18,9 @@ pub async fn default(req: Request, next: Next) -> Response {
 }
 
 pub async fn cache_control(req: Request, next: Next) -> Response {
-    let rust_env = std::env::var("RUST_ENV").unwrap_or_else(|_| "prod".to_string());
+    let config = Config::default();
+
+    let rust_env = config.rust_env();
     let cache_control = if rust_env == "dev" {
         "no-store"
         // "max-age=600"

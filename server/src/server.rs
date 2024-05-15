@@ -1,4 +1,4 @@
-use std::{env, str::FromStr};
+use std::str::FromStr;
 
 // use actix_web::{dev::ServiceRequest, middleware::Logger, web, App, HttpResponse, HttpServer};
 use axum::{
@@ -15,7 +15,11 @@ use tera::Tera;
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::log;
 
-use crate::{keycloak::Keycloak, middleware, routes, utils::tera_testers};
+use crate::{
+    keycloak::Keycloak,
+    middleware, routes,
+    utils::{config::Config, tera_testers},
+};
 
 #[derive(Debug, Clone)]
 pub struct AppState {
@@ -26,9 +30,11 @@ pub struct AppState {
 
 #[tokio::main]
 pub async fn run() -> std::io::Result<()> {
-    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL in .env");
-    let log_level = env::var("MY_LOG").unwrap_or_else(|_| "info".to_string());
-    let filter = log::LevelFilter::from_str(&log_level).unwrap_or(log::LevelFilter::Info);
+    let config = Config::default();
+
+    let db_url = config.database_url();
+    let log_level = config.my_log();
+    let filter = log::LevelFilter::from_str(log_level).unwrap_or(log::LevelFilter::Info);
 
     // Establish connection to the database
     let mut opt = ConnectOptions::new(db_url);
@@ -79,25 +85,31 @@ fn app(state: AppState) -> Router {
     let project_router = Router::new()
         .route("/", post(routes::projects::create))
         .route("/new", get(routes::projects::new))
-        .route("/:id", get(routes::projects::redirect_to_latest))
-        .route("/:id/v/:version", get(routes::projects::detail))
-        .route("/:id/v/:version/chat", post(routes::chat))
-        .route("/:id/v/:version/finalize", post(routes::projects::finalize))
-        .route("/:id/v/:version/documents", post(routes::document::create))
+        .route("/:project_id", get(routes::projects::redirect_to_latest))
+        .route("/:project_id/v/:version", get(routes::projects::detail))
+        .route("/:project_id/v/:version/chat", post(routes::chat))
         .route(
-            "/:id/v/:version/documents/editor",
+            "/:project_id/v/:version/finalize",
+            post(routes::projects::finalize),
+        )
+        .route(
+            "/:project_id/v/:version/documents",
+            post(routes::document::create),
+        )
+        .route(
+            "/:project_id/v/:version/documents/editor",
             get(routes::document::new),
         )
         .route(
-            "/:id/v/:version/documents/crawler",
+            "/:project_id/v/:version/documents/crawler",
             get(routes::document::new),
         )
         .route(
-            "/:id/v/:version/documents/crawler",
+            "/:project_id/v/:version/documents/crawler",
             post(routes::document::crawler),
         )
         .route(
-            "/:id/v/:version/documents/:doc_id",
+            "/:project_id/v/:version/documents/:doc_id",
             get(routes::document::detail),
         )
         .layer(from_fn_with_state(true, middleware::authorization));

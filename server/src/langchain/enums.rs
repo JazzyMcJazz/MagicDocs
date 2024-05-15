@@ -8,6 +8,30 @@ pub enum LLMOutput {
     Content(String),
 }
 
+#[derive(Debug, Clone)]
+pub enum OpenaiEmbeddingInput {
+    String(String),
+    StringArray(Vec<String>),
+}
+
+impl Serialize for OpenaiEmbeddingInput {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            OpenaiEmbeddingInput::String(s) => serializer.serialize_str(s),
+            OpenaiEmbeddingInput::StringArray(v) => v.serialize(serializer),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum OpenaiEncodingFormat {
+    Float,
+}
+
 #[derive(Debug, Clone, Default, Serialize)]
 #[allow(dead_code)]
 pub enum OpenaiModel {
@@ -18,6 +42,8 @@ pub enum OpenaiModel {
     #[default]
     #[serde(rename = "gpt-4o")]
     GPT4o,
+    #[serde(rename = "text-embedding-3-small")]
+    TextEmbedding3Small,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -31,9 +57,6 @@ pub enum OpenaiMessageRole {
     #[serde(rename = "tool")]
     Tool,
 }
-
-#[derive(Debug, Clone, Serialize)]
-pub enum OpenaiToolFunctionParameterProperties {}
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Default, Serialize)]

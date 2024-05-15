@@ -11,7 +11,7 @@ use http::HeaderMap;
 use crate::{
     database::Repo,
     langchain::{LLMProvider, Langchain},
-    models::CreateProjectForm,
+    models::{CreateProjectForm, Slugs},
     responses::HttpResponse,
     server::AppState,
     utils::{
@@ -70,16 +70,17 @@ pub async fn detail(data: State<AppState>, req: Request) -> Response {
     data.tera.try_render("projects/details.html", &context)
 }
 
-#[derive(serde::Deserialize)]
-pub struct FinalizePath {
-    pub id: i32,
-    pub version: i32,
-}
-
 pub async fn finalize(
     data: State<AppState>,
-    Path(FinalizePath { id, version }): Path<FinalizePath>,
+    Path(path): Path<Slugs>,
 ) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, Response> {
+    let Some(project_id) = path.project_id() else {
+        return Err(HttpResponse::BadRequest().finish());
+    };
+    let Some(version) = path.version() else {
+        return Err(HttpResponse::BadRequest().finish());
+    };
+
     let db = &data.conn;
 
     // TODO: Implement permission check
@@ -87,7 +88,7 @@ pub async fn finalize(
     //     return Err(HttpResponse::Forbidden().finish());
     // }
 
-    let mut documents = match db.documents().find_unembedded(id, version).await {
+    let mut documents = match db.documents().find_unembedded(project_id, version).await {
         Ok(documents) => documents,
         Err(e) => {
             tracing::error!("Failed to fetch documents: {:?}", e);

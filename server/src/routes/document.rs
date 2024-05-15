@@ -1,5 +1,3 @@
-use std::{convert::Infallible, time::Duration};
-
 use axum::{
     extract::{Path, Request, State},
     response::{sse::Event, Response, Sse},
@@ -7,12 +5,12 @@ use axum::{
 };
 use futures_util::{pin_mut, Stream, StreamExt};
 use http::HeaderMap;
-use serde::Deserialize;
+use std::{convert::Infallible, time::Duration};
 use tokio::time::sleep;
 
 use crate::{
     database::Repo,
-    models::{CreateDocumentForm, StartCrawlerForm},
+    models::{CreateDocumentForm, Slugs, StartCrawlerForm},
     parsing::{HtmlParser, Markdown},
     responses::HttpResponse,
     server::AppState,
@@ -36,23 +34,19 @@ pub async fn new(data: State<AppState>, req: Request) -> Response {
     tera.try_render(file, &context)
 }
 
-#[derive(Debug, Deserialize)]
-pub struct ProjectPathInfo {
-    id: i32,
-}
-
 pub async fn create(
     State(data): State<AppState>,
-    Path(path): Path<ProjectPathInfo>,
+    Path(path): Path<Slugs>,
     headers: HeaderMap,
     Form(form): Form<CreateDocumentForm>,
 ) -> Response {
     let db = &data.conn;
+    let Some(id) = path.project_id() else {
+        return HttpResponse::BadRequest().finish();
+    };
 
-    let Ok((document_id, project_version)) = db
-        .documents()
-        .create(path.id, form.name, form.content)
-        .await
+    let Ok((document_id, project_version)) =
+        db.documents().create(id, form.name, form.content).await
     else {
         return HttpResponse::InternalServerError().finish();
     };
@@ -63,7 +57,7 @@ pub async fn create(
             header,
             format!(
                 "/projects/{}/v/{}/documents/{}",
-                path.id, project_version, document_id
+                id, project_version, document_id
             ),
         ))
         .finish()
@@ -71,12 +65,16 @@ pub async fn create(
 
 pub async fn crawler(
     State(data): State<AppState>,
-    Path(path): Path<ProjectPathInfo>,
+    Path(path): Path<Slugs>,
     Form(form): Form<StartCrawlerForm>,
-) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
+) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, Response> {
+    let Some(project_id) = path.project_id() else {
+        return Err(HttpResponse::BadRequest().finish());
+    };
+
     let stream = async_stream::stream! {
         let db = &data.conn;
-        let project_id = path.id;
+
         let mut results = vec![];
         let Ok(mut crawler) = Crawler::new(form.url, form.depth) else {
             yield Ok(Event::default().data("Error"));
@@ -120,29 +118,24 @@ pub async fn crawler(
         sleep(std::time::Duration::from_secs(1)).await;
     };
 
-    Sse::new(stream).keep_alive(
+    Ok(Sse::new(stream).keep_alive(
         axum::response::sse::KeepAlive::new()
             .interval(Duration::from_secs(1))
             .text("keep-alive-text"),
-    )
-}
-
-#[derive(Deserialize)]
-pub struct DocumentPathInfo {
-    doc_id: i32,
+    ))
 }
 
 // DetailView: /projects/{id}/document/{doc_id}
-pub async fn detail(
-    data: State<AppState>,
-    Path(path): Path<DocumentPathInfo>,
-    req: Request,
-) -> Response {
+pub async fn detail(data: State<AppState>, Path(path): Path<Slugs>, req: Request) -> Response {
     let mut context = Extractor::context(&req);
     let tera = &data.tera;
     let db = &data.conn;
 
-    let Ok(document) = db.documents().find_by_id(path.doc_id).await else {
+    let Some(doc_id) = path.doc_id() else {
+        return HttpResponse::BadRequest().finish();
+    };
+
+    let Ok(document) = db.documents().find_by_id(doc_id).await else {
         return HttpResponse::InternalServerError().finish();
     };
 

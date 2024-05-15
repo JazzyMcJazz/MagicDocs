@@ -33,8 +33,6 @@ url = "2.5.0"
 time = "0.3.36"
 http = "1.1.0"
 html2md = "0.2.14"
-llm-chain = "0.13.0"
-llm-chain-openai = "0.13.0"
 text-splitter = { version = "0.13.1", features = ["markdown", "tiktoken-rs"] }
 tiktoken-rs = "0.5.8"
 

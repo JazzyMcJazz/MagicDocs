@@ -230,7 +230,7 @@ impl MigrationTrait for Migration {
 }
 
 #[derive(DeriveIden)]
-enum Project {
+pub enum Project {
     Table,
     Id,
     Name,
@@ -239,7 +239,7 @@ enum Project {
 }
 
 #[derive(DeriveIden)]
-enum UserPermission {
+pub enum UserPermission {
     Table,
     UserId,
     ProjectId,
@@ -247,7 +247,7 @@ enum UserPermission {
 }
 
 #[derive(DeriveIden)]
-enum RolePermission {
+pub enum RolePermission {
     Table,
     RoleId,
     ProjectId,
@@ -255,14 +255,14 @@ enum RolePermission {
 }
 
 #[derive(DeriveIden)]
-enum ProjectVersion {
+pub enum ProjectVersion {
     Table,
     ProjectId,
     Version,
 }
 
 #[derive(DeriveIden)]
-enum DocumentVersion {
+pub enum DocumentVersion {
     Table,
     ProjectVersionProjectId,
     ProjectVersionVersion,
@@ -270,7 +270,7 @@ enum DocumentVersion {
 }
 
 #[derive(DeriveIden)]
-enum Document {
+pub enum Document {
     Table,
     Id,
     Name,

@@ -20,17 +20,19 @@ impl Langchain {
 
     pub async fn embed(&self, content: &str) -> Result<Vec<Embedding>> {
         match self.0 {
-            LLMProvider::OpenAI => OpenAI::embed(content).await,
+            LLMProvider::OpenAI => OpenAI::embed_document(content).await,
         }
     }
 
     pub fn chat_completion<'a>(
         &self,
         db: &'a DatabaseConnection,
+        project_id: i32,
+        version: i32,
         prompt: &'a str,
     ) -> Result<impl Stream<Item = Result<LLMOutput>> + 'a> {
         match self.0 {
-            LLMProvider::OpenAI => OpenAI::event_loop(db, prompt),
+            LLMProvider::OpenAI => OpenAI::event_loop(db, project_id, version, prompt),
         }
     }
 }

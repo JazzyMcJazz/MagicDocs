@@ -1,6 +1,6 @@
-use std::{convert::Infallible, env, time::Duration};
+use std::{convert::Infallible, time::Duration};
 
-use crate::responses::HttpResponse;
+use crate::{responses::HttpResponse, utils::config::Config};
 use axum::response::{sse::Event, Response, Sse};
 use futures_util::Stream;
 use tokio::time::interval;
@@ -20,7 +20,8 @@ impl Drop for Guard {
 
 // GET /
 pub async fn sse() -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, Response> {
-    if env::var("RUST_ENV").unwrap_or_else(|_| "prod".to_string()) != "dev" {
+    let config = Config::default();
+    if config.rust_env() != "dev" {
         return Err(HttpResponse::NotFound().finish());
     }
 

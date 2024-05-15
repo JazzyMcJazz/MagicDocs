@@ -44,13 +44,13 @@ impl MigrationTrait for Migration {
 }
 
 #[derive(DeriveIden)]
-enum Document {
+pub enum Document {
     Table,
     Id,
 }
 
 #[derive(DeriveIden)]
-enum Embedding {
+pub enum Embedding {
     Table,
     Id,
     DocumentId,
