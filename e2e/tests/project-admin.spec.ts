@@ -26,7 +26,7 @@ test.describe('admin', () => {
 
       // Check that we are redirected to the project page
       await expect(page).toHaveTitle(`Magic Docs - ${projectName}`);
-      const projectTitle = page.getByRole('heading', { name: projectName });
+      const projectTitle = page.getByRole('heading', { name: projectName, exact: true });
       await expect(projectTitle).toBeVisible();
 
       // Check that the project is visible in the sidebar

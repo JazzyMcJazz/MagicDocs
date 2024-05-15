@@ -36,8 +36,12 @@ function test_pipeline() {
     docker run -d --name playwright \
         --network magicdocs-net \
         -e HOST_URL=$HOST_URL \
-        -e TEST_USER_USERNAME=$TEST_USER_USERNAME \
-        -e TEST_USER_PASSWORD=$TEST_USER_PASSWORD \
+        -e KEYCLOAK_TEST_USER_USERNAME=$KEYCLOAK_TEST_USER_USERNAME \
+        -e KEYCLOAK_TEST_USER_PASSWORD=$KEYCLOAK_TEST_USER_PASSWORD \
+        -e KEYCLOAK_TEST_ADMIN_USERNAME=$KEYCLOAK_TEST_ADMIN_USERNAME \
+        -e KEYCLOAK_TEST_ADMIN_PASSWORD=$KEYCLOAK_TEST_ADMIN_PASSWORD \
+        -e KEYCLOAK_TEST_SUPERADMIN_USERNAME=$KEYCLOAK_TEST_SUPERADMIN_USERNAME \
+        -e KEYCLOAK_TEST_SUPERADMIN_PASSWORD=$KEYCLOAK_TEST_SUPERADMIN_PASSWORD \
         magicdocs_test_playwright:latest
 
     EXIT_CODE=$(docker wait playwright)
@@ -45,7 +49,7 @@ function test_pipeline() {
 
     docker logs playwright
     docker cp playwright:/app/playwright-report/index.html $DIR/playwright-report/index.html
-    # docker cp playwright:/app/screenshots $DIR/screenshots
+    docker cp playwright:/app/screenshots $DIR/screenshots
     docker rm playwright
 
     echo "EXIT_CODE: $EXIT_CODE"

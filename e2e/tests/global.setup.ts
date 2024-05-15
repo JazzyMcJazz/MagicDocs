@@ -10,6 +10,7 @@ const SUPER_ADMIN_PASSWORD = process.env.KEYCLOAK_TEST_SUPERADMIN_PASSWORD;
 
 setup('authenticate as user', async ({ page }) => {
     await page.goto('/');
+    await page.screenshot({ path: 'screenshots/login.png' });
     await page.getByLabel('Username or email').fill(USER_USERNAME);
     await page.getByLabel('Password', { exact: true }).fill(USER_PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
