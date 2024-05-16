@@ -27,6 +27,7 @@ pipeline {
                 KEYCLOAK_TEST_ADMIN_PASSWORD = credentials('KEYCLOAK_TEST_ADMIN_PASSWORD')
                 KEYCLOAK_TEST_SUPERADMIN_USERNAME = credentials('KEYCLOAK_TEST_SUPERADMIN_USERNAME')
                 KEYCLOAK_TEST_SUPERADMIN_PASSWORD = credentials('KEYCLOAK_TEST_SUPERADMIN_PASSWORD')
+                OPENAI_API_KEY = credentials('OPENAI_API_KEY')
 
             }
             steps {
@@ -85,6 +86,7 @@ pipeline {
                         -e KEYCLOAK_REALM=magicdocs \
                         -e KEYCLOAK_CLIENT=magicdocs \
                         -e KEYCLOAK_CLIENT_SECRET=$KEYCLOAK_CLIENT_SECRET \
+                        -e OPENAI_API_KEY=$OPENAI_API_KEY \
                         -p 3000:3000 \
                         magicdocs:latest'
                 }
