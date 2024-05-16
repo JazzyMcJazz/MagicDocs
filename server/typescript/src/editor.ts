@@ -38,13 +38,19 @@ const extensions = [
     markdown(),
 ];
 
-const state = EditorState.create({
-    doc: "",
-    extensions,
-});
 
+
+let didLoad = false;
 function load() {
-    new EditorView({ parent, state });
+    if (!didLoad) {
+        const state = EditorState.create({
+            doc: textarea.value,
+            extensions,
+        });
+        new EditorView({ parent, state });
+        didLoad = true;
+    }
 }
 
 htmx.onLoad(load);
+load();

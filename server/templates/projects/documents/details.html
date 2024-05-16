@@ -1,9 +1,20 @@
 {% extends 'projects/layout.html' %}
 
 {% block content %}
-    <div class="relative p-10">
+    <div id="doc-parent" class="relative p-10">
         <div class="flex justify-between items-center">
-            <h1>{{ document.name }}</h1>
+            <div class="flex gap-2 items-center">
+                <h1>{{ document.name }}</h1>
+                {% if is_latest_version %}
+                    <div
+                        hx-get="/projects/{{ project.id }}/v/{{ project_version }}/documents/{{ document.id }}/edit"
+                        hx-target="#doc-parent"
+                        hx-swap="innerHTML"
+                        class="w-6 h-6 cursor-pointer"
+                    >{% include 'icons/pen.svg' %}</div>
+                {% endif %}
+            </div>
+
 
             {% include 'snippets/finalise_project_button.html' %}
         </div>

@@ -3,7 +3,7 @@ use std::str::FromStr;
 // use actix_web::{dev::ServiceRequest, middleware::Logger, web, App, HttpResponse, HttpServer};
 use axum::{
     middleware::{from_fn, from_fn_with_state},
-    routing::{get, head, post},
+    routing::{any, get, head, post},
     Router,
 };
 use http::StatusCode;
@@ -110,7 +110,11 @@ fn app(state: AppState) -> Router {
         )
         .route(
             "/:project_id/v/:version/documents/:doc_id",
-            get(routes::document::detail),
+            any(routes::document::detail),
+        )
+        .route(
+            "/:project_id/v/:version/documents/:doc_id/edit",
+            get(routes::document::editor),
         )
         .layer(from_fn_with_state(true, middleware::authorization));
 

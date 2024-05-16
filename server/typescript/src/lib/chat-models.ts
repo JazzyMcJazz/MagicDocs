@@ -1,3 +1,5 @@
+import markdownit from 'markdown-it';
+import shiki from '@shikijs/markdown-it';
 
 export const renderMessage = (text: string, user?: string): number => {
     const chat = document.getElementById('chat-messages');

@@ -16,6 +16,25 @@ impl<'a> EmbeddingRepo<'a> {
         Self(db)
     }
 
+    /// Search for similar embeddings in the database
+    ///
+    /// The query that's built:
+    /// ```sql
+    /// SELECT "text", 1 - ("embedding" <=> $1::vector) AS score
+    /// FROM
+    ///     "embedding"
+    ///
+    /// INNER JOIN
+    ///     "document" ON "embedding"."document_id" = "document"."id"
+    /// INNER JOIN
+    ///     "document_version" ON "document"."id" = "document_version"."document_id"
+    /// INNER JOIN
+    ///     "project_version" ON "document_version"."project_version_project_id" = "project_version"."project_id"
+    /// WHERE
+    ///         "project_version"."project_id" = $2
+    ///     AND
+    ///         "project_version"."version" = $3 ORDER BY "score" DESC
+    /// ```
     pub async fn similarity_search(
         &self,
         project_id: i32,
@@ -62,6 +81,8 @@ impl<'a> EmbeddingRepo<'a> {
             .build(PostgresQueryBuilder)
             .to_owned();
 
+        dbg!(&sql);
+
         let stmt = Statement::from_sql_and_values(self.0.get_database_backend(), sql, values);
 
         let result: Vec<SearchResult> = self
@@ -75,8 +96,6 @@ impl<'a> EmbeddingRepo<'a> {
             })
             .filter(|r| r.score >= 0.6) // TODO: Filter in database query
             .collect();
-
-        dbg!(&result);
 
         Ok(result)
     }

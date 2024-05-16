@@ -10,6 +10,7 @@ pub struct Model {
     pub project_id: i32,
     #[sea_orm(primary_key, auto_increment = false)]
     pub version: i32,
+    pub finalized: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

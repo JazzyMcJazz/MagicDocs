@@ -3,7 +3,7 @@ use axum::extract::Request;
 use entity::project;
 use tera::Context;
 
-use crate::models::DocumentWithIdAndName;
+use crate::models::DocumentWithoutContent;
 
 use super::{claims::Claims, context_data::UserData};
 
@@ -43,8 +43,8 @@ impl Extractor {
 
     pub fn active_document(
         document_id: Option<i32>,
-        documents: &[DocumentWithIdAndName],
-    ) -> Option<DocumentWithIdAndName> {
+        documents: &[DocumentWithoutContent],
+    ) -> Option<DocumentWithoutContent> {
         match document_id {
             Some(document_id) => documents.iter().find(|d| d.id == document_id).cloned(),
             None => None,
@@ -52,10 +52,10 @@ impl Extractor {
     }
 
     pub fn project_version_finalized(
-        documents: &Option<Vec<DocumentWithIdAndName>>,
+        documents: &Option<Vec<DocumentWithoutContent>>,
     ) -> Option<bool> {
         documents
             .as_ref()
-            .map(|documents| documents.iter().all(|d| d.is_embedded))
+            .map(|documents| documents.iter().all(|d| d.is_finalized))
     }
 }

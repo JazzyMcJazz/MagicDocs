@@ -36,11 +36,22 @@ pub async fn context_builder(
 
     let active_project = Extractor::active_project(path.project_id(), &projects);
 
+    let project_versions = match &active_project {
+        Some(project) => match db.projects_versions().all(project.id).await {
+            Ok(versions) => Some(versions),
+            Err(e) => {
+                tracing::error!("Failed to get project versions: {:?}", e);
+                Some(vec![])
+            }
+        },
+        None => None,
+    };
+
     let documents = match &active_project {
         Some(project) => match path.version() {
             Some(version) => match db
                 .documents()
-                .all_only_id_and_column(project.id, version)
+                .all_only_id_and_name(project.id, version)
                 .await
             {
                 Ok(documents) => Some(documents),
@@ -66,12 +77,19 @@ pub async fn context_builder(
     context.insert("env", &env);
     context.insert("projects", &projects);
     context.insert("project", &active_project);
+    context.insert("project_versions", &project_versions);
     context.insert("documents", &documents);
     context.insert("document", &active_document);
 
     let is_finalized = Extractor::project_version_finalized(&documents);
     if let Some(is_finalized) = is_finalized {
         context.insert("is_finalized", &is_finalized);
+    }
+
+    if let Some(project_versions) = project_versions {
+        let latest_version = project_versions.iter().map(|m| m.version).max();
+
+        context.insert("is_latest_version", &(latest_version == path.version()));
     }
 
     req.extensions_mut().insert(context);

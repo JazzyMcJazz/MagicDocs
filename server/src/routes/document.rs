@@ -4,7 +4,7 @@ use axum::{
     Form,
 };
 use futures_util::{pin_mut, Stream, StreamExt};
-use http::HeaderMap;
+use http::{HeaderMap, Method};
 use std::{convert::Infallible, time::Duration};
 use tokio::time::sleep;
 
@@ -125,27 +125,94 @@ pub async fn crawler(
     ))
 }
 
-// DetailView: /projects/{id}/document/{doc_id}
 pub async fn detail(data: State<AppState>, Path(path): Path<Slugs>, req: Request) -> Response {
     let mut context = Extractor::context(&req);
     let tera = &data.tera;
     let db = &data.conn;
 
-    let Some(doc_id) = path.doc_id() else {
+    let (Some(project_id), Some(version), Some(doc_id)) = path.all() else {
         return HttpResponse::BadRequest().finish();
     };
+
+    match *req.method() {
+        Method::GET => {
+            let Ok(document) = db.documents().find_by_id(doc_id).await else {
+                return HttpResponse::InternalServerError().finish();
+            };
+
+            let Some(mut document) = document else {
+                return HttpResponse::NotFound().finish();
+            };
+
+            document.content = Markdown.to_html(&document.content);
+            context.insert("document", &document);
+
+            tera.try_render("projects/documents/details.html", &context)
+        }
+        Method::PATCH => {
+            let (status, header) = req.headers().redirect_status_and_header();
+            HttpResponse::build(status)
+                .insert_header(("HX-Refresh", "true".to_owned()))
+                .insert_header((
+                    header,
+                    format!("projects/{}/v/{}/documents/{}", project_id, version, doc_id),
+                ))
+                .finish()
+        }
+        Method::DELETE => {
+            let result = match db.documents().delete(project_id, version, doc_id).await {
+                Ok(res) => res,
+                Err(e) => {
+                    tracing::error!("Error deleting document: {:?}", e);
+                    return HttpResponse::InternalServerError().finish();
+                }
+            };
+
+            let version = match result {
+                Some(new_version) => new_version,
+                None => version,
+            };
+
+            let (status, header) = req.headers().redirect_status_and_header();
+            HttpResponse::build(status)
+                .insert_header((header, format!("/projects/{}/v/{}", project_id, version)))
+                .finish()
+        }
+        _ => HttpResponse::MethodNotAllowed().finish(),
+    }
+}
+
+pub async fn editor(data: State<AppState>, Path(path): Path<Slugs>, req: Request) -> Response {
+    let mut context = Extractor::context(&req);
+    let tera = &data.tera;
+    let db = &data.conn;
+
+    let (Some(project_id), Some(version), Some(doc_id)) = path.all() else {
+        return HttpResponse::BadRequest().finish();
+    };
+
+    let Ok(Some(latest_project_version)) = db.projects_versions().find_latest(project_id).await
+    else {
+        return HttpResponse::InternalServerError().finish();
+    };
+
+    if latest_project_version.version != version {
+        return HttpResponse::Forbidden().finish();
+    }
 
     let Ok(document) = db.documents().find_by_id(doc_id).await else {
         return HttpResponse::InternalServerError().finish();
     };
 
-    let mut document = match document {
+    let document = match document {
         Some(doc) => doc,
         None => return HttpResponse::NotFound().finish(),
     };
 
-    document.content = Markdown.to_html(&document.content);
     context.insert("document", &document);
 
-    tera.try_render("projects/documents/details.html", &context)
+    match req.method() {
+        &Method::GET => tera.try_render("snippets/editor.html", &context),
+        _ => HttpResponse::MethodNotAllowed().finish(),
+    }
 }

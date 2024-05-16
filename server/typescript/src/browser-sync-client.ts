@@ -41,5 +41,9 @@ function displaySpinner() {
     document.body.appendChild(spinner);
 }
 
-htmx.onLoad(open);
+htmx.onLoad(() => {
+    if (!sse) {
+        open();
+    }
+});
 window.addEventListener('beforeunload', close);

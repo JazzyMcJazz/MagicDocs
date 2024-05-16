@@ -22,13 +22,50 @@
                 </a>
             </div>
 
+            {% if project_versions | length > 1 %}
+                <select
+                    id="document-filter"
+                    class="w-full p-3 bg-[#181818] text-white"
+                >
+                    {% for version in project_versions %}
+                        {% set selected = version.version == project_version %}
+                        <option
+                            value="/projects/{{ project.id }}/v/{{ version.version }}"
+                            {% if selected %}selected{% endif %}
+                        >
+                            Version {{ version.version }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <script>
+                    document.getElementById('document-filter').addEventListener('change', function() {
+                        window.location.href = this.value;
+                    });
+                </script>
+            {% endif %}
+
             <ul class="max-h-[calc(100dvh-3.5rem-75px)] overflow-y-auto">
                 {% for doc in documents %}
-                    <li>
+                    <li class="group">
                         <a
                             href="/projects/{{ project.id }}/v/{{ project_version }}/documents/{{ doc.id }}"
-                            class="{% if doc is active_document(path) %}active{% endif %}">
-                            {{ doc.name }}
+                            class="{% if doc is active_document(path) %}active{% endif %} !flex justify-between items-center">
+                            <p>{{ doc.name }}</p>
+                            {% if is_latest_version %}
+                                <div
+                                    id="delete-doc-{{ doc.id }}"
+                                    hx-stop
+                                    hx-delete="/projects/{{ project.id }}/v/{{ project_version }}/documents/{{ doc.id }}"
+                                    hx-confirm="Are you sure you want to delete {{ doc.name }}?"
+                                    class="opacity-0 group-hover:opacity-60 w-5 h-5 text-red-500">
+                                    {% include 'icons/trash.svg' %}
+                                </div>
+                                <script>
+                                    document.getElementById('delete-doc-{{ doc.id }}').addEventListener('click', (e) => {
+                                        e.stopPropagation();
+                                    });
+                                </script>
+                            {% endif %}
                         </a>
                     </li>
                 {% endfor %}
@@ -45,6 +82,8 @@
             {% block content %}{% endblock %}
         </div>
 
-        {% include 'snippets/chat_panel.html' %}
+        {% if is_finalized %}
+            {% include 'snippets/chat_panel.html' %}
+        {% endif %}
     </div>
 {% endblock %}

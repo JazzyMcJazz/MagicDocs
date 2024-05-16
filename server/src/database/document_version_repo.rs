@@ -1,12 +1,24 @@
 use anyhow::{Context, Result};
-use entity::document_version::{ActiveModel, Entity};
-use migration::sea_orm::{DatabaseConnection, DatabaseTransaction, EntityTrait, Set};
+use entity::document_version::{ActiveModel, Column, Entity, Model};
+use migration::sea_orm::{
+    ColumnTrait, DatabaseConnection, DatabaseTransaction, EntityTrait, QueryFilter, Set,
+};
 
 pub struct DocumentVersionRepo<'a>(&'a DatabaseConnection);
 
 impl<'a> DocumentVersionRepo<'a> {
     pub fn new(db: &'a DatabaseConnection) -> Self {
         Self(db)
+    }
+
+    pub async fn find_by_doc_id(&self, doc_id: i32) -> Result<Vec<Model>> {
+        let result = Entity::find()
+            .filter(Column::DocumentId.eq(doc_id))
+            .all(self.0)
+            .await
+            .context("Failed to get document versions")?;
+
+        Ok(result)
     }
 
     // pub async fn find_latest(&self, id: i32) -> Result<Option<i32>> {
@@ -73,6 +85,52 @@ impl<'a> DocumentVersionRepo<'a> {
                 .await
                 .context("Failed to create document versions")?,
         };
+
+        Ok(())
+    }
+
+    pub async fn bump_project_version(
+        &self,
+        project_id: i32,
+        version: i32,
+        exclude_documents: Vec<i32>,
+        tnx: &DatabaseTransaction,
+    ) -> Result<()> {
+        // Find all document versions for the project and version
+        let mut result = Entity::find()
+            .filter(Column::ProjectVersionProjectId.eq(project_id))
+            .filter(Column::ProjectVersionVersion.eq(version))
+            .filter(Column::DocumentId.is_not_in(exclude_documents))
+            .all(tnx)
+            .await
+            .context("Failed to get document versions")?;
+
+        // Bump the project version for each document version
+        let models: Vec<ActiveModel> = result
+            .iter_mut()
+            .map(|model| {
+                let project_version_version = model.project_version_version + 1;
+                ActiveModel {
+                    project_version_project_id: Set(project_id),
+                    project_version_version: Set(project_version_version),
+                    document_id: Set(model.document_id),
+                }
+            })
+            .collect();
+
+        // Insert the updated document versions
+        Entity::insert_many(models)
+            .exec(tnx)
+            .await
+            .context("Failed to bump project version for document versions")?;
+
+        Ok(())
+    }
+
+    pub async fn delete(&self, project_id: i32, version: i32, doc_id: i32) -> Result<()> {
+        let _ = Entity::delete_by_id((project_id, version, doc_id))
+            .exec(self.0)
+            .await?;
 
         Ok(())
     }

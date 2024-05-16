@@ -19,4 +19,8 @@ impl Slugs {
     pub fn doc_id(&self) -> Option<i32> {
         self.doc_id
     }
+
+    pub fn all(&self) -> (Option<i32>, Option<i32>, Option<i32>) {
+        (self.project_id, self.version, self.doc_id)
+    }
 }

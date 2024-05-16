@@ -96,10 +96,6 @@ pub async fn finalize(
         }
     };
 
-    if documents.is_empty() {
-        return Err(HttpResponse::NotFound().finish());
-    }
-
     let stream = async_stream::stream! {
         let db = &data.conn;
         let lc = Langchain::new(LLMProvider::OpenAI);
@@ -111,8 +107,8 @@ pub async fn finalize(
                 Err(e) => {
                     tracing::error!("Failed to embed document: {:?}", e);
                     yield Ok(Event::default().data(format!("Failed to embed document: {:?}", e)));
-                    tokio::time::sleep(Duration::from_secs(1)).await;
-                    continue;
+                    tokio::time::sleep(Duration::from_secs(2)).await;
+                    break;
                 }
             };
 
@@ -126,6 +122,7 @@ pub async fn finalize(
             };
         }
 
+        db.projects_versions().finalize(project_id, version).await.ok();
     };
 
     let sse = Sse::new(stream).keep_alive(

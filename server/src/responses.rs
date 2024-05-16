@@ -33,6 +33,10 @@ impl HttpResponse {
         Self::build(StatusCode::NOT_FOUND)
     }
     #[allow(non_snake_case)]
+    pub fn MethodNotAllowed() -> HttpResponseBuilder {
+        Self::build(StatusCode::METHOD_NOT_ALLOWED)
+    }
+    #[allow(non_snake_case)]
     pub fn InternalServerError() -> HttpResponseBuilder {
         Self::build(StatusCode::INTERNAL_SERVER_ERROR)
     }

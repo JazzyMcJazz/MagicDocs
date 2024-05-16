@@ -149,7 +149,7 @@ nav a {
 /* Codemirror Editor */
 .cm-editor {
 	@apply w-full p-4 min-h-48 text-white bg-[#181818] border-2 border-base;
-	@apply cursor-text;
+	@apply cursor-default;
 }
 
 .cm-scroller, .cm-content {
@@ -166,6 +166,10 @@ nav a {
 
 .cm-selectionBackground {
 	@apply !bg-[#256ab0] py-1;
+}
+
+.cm-line {
+	@apply cursor-text;
 }
 
 /* Document Markdown */
@@ -221,4 +225,25 @@ nav a {
 
 .message-body {
 	@apply ml-5;
+}
+
+/* Chat */
+#chat-messages h1, #chat-messages h2, #chat-messages h3, #chat-messages h4, #chat-messages h5, #chat-messages h6, #chat-messages p {
+	@apply my-2;
+}
+
+#chat-messages ol {
+	@apply my-2 list-decimal list-outside;
+}
+
+#chat-messages ul {
+	@apply my-2 list-disc list-outside;
+}
+
+#chat-messages li {
+	@apply ml-4;
+}
+
+#chat-messages pre {
+	@apply p-4 rounded-md overflow-x-auto;
 }

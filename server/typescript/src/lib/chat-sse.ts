@@ -1,11 +1,13 @@
 import { ReadyStateEvent, SSE, SSEvent } from "sse.js";
 import { renderMessage, updateMessage } from "./chat-models";
+import markdownit from 'markdown-it';
+import shiki from '@shikijs/markdown-it';
 
 export function chatSse() {
     const form = document.getElementById('chat-form') as HTMLFormElement;
     const textarea = document.getElementById('chat-input') as HTMLTextAreaElement;
 
-    const onSubmit = (event: Event) => {
+    const onSubmit = async (event: Event) => {
         event.preventDefault();
         textarea.disabled = true;
 
@@ -37,9 +39,12 @@ export function chatSse() {
             }
         }
 
-        source.onmessage = (event: SSEvent) => {
+        const md = markdownit();
+        md.use(await shiki({ theme: 'vitesse-black' }));
+
+        source.onmessage = async (event: SSEvent) => {
             response += event.data;
-            updateMessage(messageId, response)
+            updateMessage(messageId, md.render(response));
         }
 
         source.stream();
