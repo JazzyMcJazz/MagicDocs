@@ -78,7 +78,7 @@ pub async fn authentication(
                 return HttpResponse::InternalServerError().finish();
             };
 
-            return HttpResponse::build(StatusCode::FOUND)
+            return HttpResponse::build(StatusCode::TEMPORARY_REDIRECT)
                 .cookie(cookies.0)
                 .cookie(cookies.1)
                 .cookie(cookies.2)

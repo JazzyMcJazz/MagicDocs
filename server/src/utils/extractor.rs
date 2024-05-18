@@ -54,6 +54,15 @@ impl Extractor {
     pub fn project_version_finalized(
         documents: &Option<Vec<DocumentWithoutContent>>,
     ) -> Option<bool> {
+        match documents {
+            Some(documents) => {
+                if documents.is_empty() {
+                    return None;
+                }
+            }
+            None => (),
+        };
+
         documents
             .as_ref()
             .map(|documents| documents.iter().all(|d| d.is_finalized))

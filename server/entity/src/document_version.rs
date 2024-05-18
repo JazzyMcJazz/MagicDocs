@@ -6,11 +6,12 @@ use serde::Serialize;
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
 #[sea_orm(table_name = "document_version")]
 pub struct Model {
+    #[sea_orm(primary_key)]
+    pub id: i32,
     #[sea_orm(primary_key, auto_increment = false)]
     pub project_version_project_id: i32,
     #[sea_orm(primary_key, auto_increment = false)]
     pub project_version_version: i32,
-    #[sea_orm(primary_key, auto_increment = false)]
     pub document_id: i32,
 }
 

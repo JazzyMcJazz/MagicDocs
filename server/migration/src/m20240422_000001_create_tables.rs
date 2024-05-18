@@ -166,14 +166,15 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(DocumentVersion::Table)
                     .if_not_exists()
+                    .col(ColumnDef::new(DocumentVersion::Id).integer().not_null().auto_increment())
                     .col(ColumnDef::new(DocumentVersion::ProjectVersionProjectId).integer().not_null())
                     .col(ColumnDef::new(DocumentVersion::ProjectVersionVersion).integer().not_null())
                     .col(ColumnDef::new(DocumentVersion::DocumentId).integer().not_null())
                     .primary_key(
                         Index::create()
+                            .col(DocumentVersion::Id)
                             .col(DocumentVersion::ProjectVersionProjectId)
                             .col(DocumentVersion::ProjectVersionVersion)
-                            .col(DocumentVersion::DocumentId)
                     )
                     .foreign_key(
                         ForeignKey::create()
@@ -264,6 +265,7 @@ pub enum ProjectVersion {
 #[derive(DeriveIden)]
 pub enum DocumentVersion {
     Table,
+    Id,
     ProjectVersionProjectId,
     ProjectVersionVersion,
     DocumentId,

@@ -110,7 +110,7 @@ fn app(state: AppState) -> Router {
         )
         .route(
             "/:project_id/v/:version/documents/:doc_id",
-            any(routes::document::detail),
+            any(routes::document::detail).patch(routes::document::patch),
         )
         .route(
             "/:project_id/v/:version/documents/:doc_id/edit",

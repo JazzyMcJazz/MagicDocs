@@ -4,7 +4,7 @@ use axum::{
     Form,
 };
 use futures_util::{pin_mut, StreamExt};
-use http::{HeaderMap, HeaderValue, Method};
+use http::{HeaderMap, HeaderName, HeaderValue, Method, StatusCode};
 use std::{convert::Infallible, time::Duration};
 use tokio::time::sleep;
 
@@ -130,7 +130,11 @@ pub async fn crawler(
     res
 }
 
-pub async fn detail(data: State<AppState>, Path(path): Path<Slugs>, req: Request) -> Response {
+pub async fn detail(
+    State(data): State<AppState>,
+    Path(path): Path<Slugs>,
+    req: Request,
+) -> Response {
     let mut context = Extractor::context(&req);
     let tera = &data.tera;
     let db = &data.conn;
@@ -141,7 +145,11 @@ pub async fn detail(data: State<AppState>, Path(path): Path<Slugs>, req: Request
 
     match *req.method() {
         Method::GET => {
-            let Ok(document) = db.documents().find_by_id(doc_id).await else {
+            let Ok(document) = db
+                .documents()
+                .find_by_version_id(doc_id, project_id, version)
+                .await
+            else {
                 return HttpResponse::InternalServerError().finish();
             };
 
@@ -154,18 +162,8 @@ pub async fn detail(data: State<AppState>, Path(path): Path<Slugs>, req: Request
 
             tera.try_render("projects/documents/details.html", &context)
         }
-        Method::PATCH => {
-            let (status, header) = req.headers().redirect_status_and_header();
-            HttpResponse::build(status)
-                .insert_header(("HX-Refresh", "true".to_owned()))
-                .insert_header((
-                    header,
-                    format!("projects/{}/v/{}/documents/{}", project_id, version, doc_id),
-                ))
-                .finish()
-        }
         Method::DELETE => {
-            let result = match db.documents().delete(project_id, version, doc_id).await {
+            let result = match db.documents().delete(doc_id, project_id, version).await {
                 Ok(res) => res,
                 Err(e) => {
                     tracing::error!("Error deleting document: {:?}", e);
@@ -187,6 +185,43 @@ pub async fn detail(data: State<AppState>, Path(path): Path<Slugs>, req: Request
     }
 }
 
+pub async fn patch(
+    State(data): State<AppState>,
+    Path(path): Path<Slugs>,
+    Form(form): Form<CreateDocumentForm>,
+) -> Response {
+    let db = &data.conn;
+
+    let (Some(project_id), Some(version), Some(doc_id)) = path.all() else {
+        return HttpResponse::BadRequest().finish();
+    };
+
+    dbg!(&form);
+
+    match db
+        .documents()
+        .update(doc_id, project_id, version, (&form.name, &form.content))
+        .await
+    {
+        Ok(Some(version)) => HttpResponse::build(StatusCode::OK)
+            .insert_header((
+                HeaderName::from_static("hx-redirect"),
+                format!(
+                    "/projects/{}/v/{}/documents/{}",
+                    project_id, version, doc_id
+                ),
+            ))
+            .finish(),
+        Ok(None) => HttpResponse::build(StatusCode::OK)
+            .insert_header(("HX-Refresh", "true".to_owned()))
+            .finish(),
+        Err(e) => {
+            tracing::error!("Error updating document: {:?}", e);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+}
+
 pub async fn editor(data: State<AppState>, Path(path): Path<Slugs>, req: Request) -> Response {
     let mut context = Extractor::context(&req);
     let tera = &data.tera;
@@ -205,7 +240,11 @@ pub async fn editor(data: State<AppState>, Path(path): Path<Slugs>, req: Request
         return HttpResponse::Forbidden().finish();
     }
 
-    let Ok(document) = db.documents().find_by_id(doc_id).await else {
+    let Ok(document) = db
+        .documents()
+        .find_by_version_id(doc_id, project_id, version)
+        .await
+    else {
         return HttpResponse::InternalServerError().finish();
     };
 
