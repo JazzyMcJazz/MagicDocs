@@ -1,10 +1,10 @@
 use axum::{
     extract::{Path, Request, State},
-    response::{sse::Event, Response, Sse},
+    response::{sse::Event, IntoResponse, Response, Sse},
     Form,
 };
-use futures_util::{pin_mut, Stream, StreamExt};
-use http::{HeaderMap, Method};
+use futures_util::{pin_mut, StreamExt};
+use http::{HeaderMap, HeaderValue, Method};
 use std::{convert::Infallible, time::Duration};
 use tokio::time::sleep;
 
@@ -67,9 +67,9 @@ pub async fn crawler(
     State(data): State<AppState>,
     Path(path): Path<Slugs>,
     Form(form): Form<StartCrawlerForm>,
-) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, Response> {
+) -> Response {
     let Some(project_id) = path.project_id() else {
-        return Err(HttpResponse::BadRequest().finish());
+        return HttpResponse::BadRequest().finish();
     };
 
     let stream = async_stream::stream! {
@@ -85,7 +85,7 @@ pub async fn crawler(
         while let Some(r) = stream.next().await {
             match r {
                 StreamOutput::Message(msg) => {
-                    yield Ok(Event::default().data(msg));
+                    yield Ok::<_, Infallible>(Event::default().data(msg));
                 }
                 StreamOutput::Result(res) => {
                     results.push(res);
@@ -118,11 +118,16 @@ pub async fn crawler(
         sleep(std::time::Duration::from_secs(1)).await;
     };
 
-    Ok(Sse::new(stream).keep_alive(
+    let sse = Sse::new(stream).keep_alive(
         axum::response::sse::KeepAlive::new()
             .interval(Duration::from_secs(1))
             .text("keep-alive-text"),
-    ))
+    );
+
+    let mut res = sse.into_response();
+    res.headers_mut()
+        .insert("X-Accel-Buffering", HeaderValue::from_static("no"));
+    res
 }
 
 pub async fn detail(data: State<AppState>, Path(path): Path<Slugs>, req: Request) -> Response {

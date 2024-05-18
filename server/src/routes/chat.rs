@@ -8,10 +8,11 @@ use crate::{
 };
 use axum::{
     extract::{Path, State},
-    response::{sse::Event, Response, Sse},
+    response::{sse::Event, IntoResponse, Response, Sse},
     Form,
 };
-use futures_util::{Stream, StreamExt};
+use futures_util::StreamExt;
+use http::HeaderValue;
 use tokio::pin;
 
 struct Guard;
@@ -27,17 +28,17 @@ pub async fn chat(
     State(data): State<AppState>,
     Path(path): Path<Slugs>,
     Form(form): Form<ChatForm>,
-) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, Response> {
+) -> Response {
     // TODO: Implement authorization
     // if not_authorized {
     //     return Err(HttpResponse::Forbidden().finish());
     // }
 
     let Some(project_id) = path.project_id() else {
-        return Err(HttpResponse::BadRequest().finish());
+        return HttpResponse::BadRequest().finish();
     };
     let Some(version) = path.version() else {
-        return Err(HttpResponse::BadRequest().finish());
+        return HttpResponse::BadRequest().finish();
     };
 
     let stream = async_stream::stream! {
@@ -64,7 +65,7 @@ pub async fn chat(
                 Ok(output) => {
                     match output {
                         LLMOutput::Content(content) => {
-                            yield Ok(Event::default().data(content));
+                            yield Ok::<_, Infallible>(Event::default().data(content));
                         }
                     }
                 }
@@ -78,9 +79,12 @@ pub async fn chat(
 
     let sse = Sse::new(stream).keep_alive(
         axum::response::sse::KeepAlive::new()
-            .interval(Duration::from_secs(1))
+            .interval(Duration::from_secs(15))
             .text("keep-alive-text"),
     );
 
-    Ok(sse)
+    let mut res = sse.into_response();
+    res.headers_mut()
+        .insert("X-Accel-Buffering", HeaderValue::from_static("no"));
+    res
 }

@@ -2,11 +2,10 @@ use std::{convert::Infallible, time::Duration};
 
 use axum::{
     extract::{Path, Request, State},
-    response::{sse::Event, Response, Sse},
+    response::{sse::Event, IntoResponse, Response, Sse},
     Form,
 };
-use futures_util::Stream;
-use http::HeaderMap;
+use http::{HeaderMap, HeaderValue};
 
 use crate::{
     database::Repo,
@@ -70,15 +69,12 @@ pub async fn detail(data: State<AppState>, req: Request) -> Response {
     data.tera.try_render("projects/details.html", &context)
 }
 
-pub async fn finalize(
-    data: State<AppState>,
-    Path(path): Path<Slugs>,
-) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, Response> {
+pub async fn finalize(data: State<AppState>, Path(path): Path<Slugs>) -> Response {
     let Some(project_id) = path.project_id() else {
-        return Err(HttpResponse::BadRequest().finish());
+        return HttpResponse::BadRequest().finish();
     };
     let Some(version) = path.version() else {
-        return Err(HttpResponse::BadRequest().finish());
+        return HttpResponse::BadRequest().finish();
     };
 
     let db = &data.conn;
@@ -92,7 +88,7 @@ pub async fn finalize(
         Ok(documents) => documents,
         Err(e) => {
             tracing::error!("Failed to fetch documents: {:?}", e);
-            return Err(HttpResponse::InternalServerError().finish());
+            return HttpResponse::InternalServerError().finish();
         }
     };
 
@@ -101,12 +97,12 @@ pub async fn finalize(
         let lc = Langchain::new(LLMProvider::OpenAI);
 
         while let Some(document) = documents.pop() {
-            yield Ok(Event::default().data(format!("Embedding Document:\n\"{}\"", document.name)));
+            yield Ok::<_, Infallible>(Event::default().data(format!("Embedding Document:\n\"{}\"", document.name)));
             let embeddings = match lc.embed(&document.content).await {
                 Ok(embeddings) => embeddings,
                 Err(e) => {
                     tracing::error!("Failed to embed document: {:?}", e);
-                    yield Ok(Event::default().data(format!("Failed to embed document: {:?}", e)));
+                    yield Ok::<_, Infallible>(Event::default().data(format!("Failed to embed document: {:?}", e)));
                     tokio::time::sleep(Duration::from_secs(2)).await;
                     break;
                 }
@@ -116,7 +112,7 @@ pub async fn finalize(
                 Ok(_) => (),
                 Err(e) => {
                     tracing::error!("Failed to save embeddings: {:?}", e);
-                    yield Ok(Event::default().data(format!("Failed to save embeddings: {:?}", e)));
+                    yield Ok::<_, Infallible>(Event::default().data(format!("Failed to save embeddings: {:?}", e)));
                     tokio::time::sleep(Duration::from_secs(1)).await;
                 }
             };
@@ -131,5 +127,8 @@ pub async fn finalize(
             .text("keep-alive-text"),
     );
 
-    Ok(sse)
+    let mut res = sse.into_response();
+    res.headers_mut()
+        .insert("X-Accel-Buffering", HeaderValue::from_static("no"));
+    res
 }

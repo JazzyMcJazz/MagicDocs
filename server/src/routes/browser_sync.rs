@@ -1,8 +1,8 @@
 use std::{convert::Infallible, time::Duration};
 
 use crate::{responses::HttpResponse, utils::config::Config};
-use axum::response::{sse::Event, Response, Sse};
-use futures_util::Stream;
+use axum::response::{sse::Event, IntoResponse, Response, Sse};
+use http::HeaderValue;
 use tokio::time::interval;
 
 static CONNECTIONS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
@@ -19,10 +19,10 @@ impl Drop for Guard {
 }
 
 // GET /
-pub async fn sse() -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, Response> {
+pub async fn sse() -> Response {
     let config = Config::default();
     if config.rust_env() != "dev" {
-        return Err(HttpResponse::NotFound().finish());
+        return HttpResponse::NotFound().finish();
     }
 
     CONNECTIONS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -33,7 +33,7 @@ pub async fn sse() -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>,
         let _guard = Guard;
         loop {
             interval.tick().await;
-            yield Ok(Event::default().data(""));
+            yield Ok::<_, Infallible>(Event::default().data(""));
         }
     };
 
@@ -43,5 +43,8 @@ pub async fn sse() -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>,
             .text("keep-alive-text"),
     );
 
-    Ok(sse)
+    let mut res = sse.into_response();
+    res.headers_mut()
+        .insert("X-Accel-Buffering", HeaderValue::from_static("no"));
+    res
 }
