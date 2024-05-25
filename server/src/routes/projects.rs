@@ -111,6 +111,7 @@ pub async fn finalize(data: State<AppState>, Path(path): Path<Slugs>) -> Respons
         let db = &data.conn;
         let lc = Langchain::new(LLMProvider::OpenAI);
 
+        let mut had_error = false;
         while let Some(document) = documents.pop() {
             yield Ok::<_, Infallible>(Event::default().data(format!("Embedding Document:\n\"{}\"", document.name)));
             let embeddings = match lc.embed(&document.content).await {
@@ -119,6 +120,7 @@ pub async fn finalize(data: State<AppState>, Path(path): Path<Slugs>) -> Respons
                     tracing::error!("Failed to embed document: {:?}", e);
                     yield Ok::<_, Infallible>(Event::default().data(format!("Failed to embed document: {:?}", e)));
                     tokio::time::sleep(Duration::from_secs(2)).await;
+                    had_error = true;
                     break;
                 }
             };
@@ -128,12 +130,15 @@ pub async fn finalize(data: State<AppState>, Path(path): Path<Slugs>) -> Respons
                 Err(e) => {
                     tracing::error!("Failed to save embeddings: {:?}", e);
                     yield Ok::<_, Infallible>(Event::default().data(format!("Failed to save embeddings: {:?}", e)));
+                    had_error = true;
                     tokio::time::sleep(Duration::from_secs(1)).await;
                 }
             };
         }
 
-        db.projects_versions().finalize(project_id, version).await.ok();
+        if !had_error {
+            db.projects_versions().finalize(project_id, version).await.ok();
+        }
     };
 
     let sse = Sse::new(stream).keep_alive(
