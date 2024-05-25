@@ -12,6 +12,8 @@ export default {
         crawler: 'src/crawler.ts',
         "project-finalize-sse": 'src/project-finalize-sse.ts',
         'chat': 'src/chat.ts',
+        'manage-user': 'src/manage-user.ts',
+        'role-permissions': 'src/role-permissions.ts',
         'browser-sync-client': 'src/browser-sync-client.ts',
     },
     output: {

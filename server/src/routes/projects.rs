@@ -20,6 +20,14 @@ use crate::{
 };
 
 pub async fn new(State(data): State<AppState>, req: Request) -> Response {
+    let Ok(user) = Extractor::claims(&req) else {
+        return HttpResponse::InternalServerError().finish();
+    };
+
+    if !user.is_admin() {
+        return HttpResponse::Forbidden().finish();
+    }
+
     let context = Extractor::context(&req);
     data.tera.try_render("projects/new.html", &context)
 }
@@ -79,11 +87,6 @@ pub async fn finalize(data: State<AppState>, Path(path): Path<Slugs>) -> Respons
 
     let db = &data.conn;
 
-    // TODO: Implement permission check
-    // if has_permission {
-    //     return Err(HttpResponse::Forbidden().finish());
-    // }
-
     let mut documents = match db.documents().find_unembedded(project_id, version).await {
         Ok(documents) => documents,
         Err(e) => {
@@ -91,6 +94,10 @@ pub async fn finalize(data: State<AppState>, Path(path): Path<Slugs>) -> Respons
             return HttpResponse::InternalServerError().finish();
         }
     };
+
+    if documents.is_empty() {
+        return HttpResponse::BadRequest().finish();
+    }
 
     let stream = async_stream::stream! {
         let db = &data.conn;

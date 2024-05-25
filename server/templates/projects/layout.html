@@ -13,14 +13,16 @@
     <div class="relative flex h-[calc(100dvh-3.5rem)]">
 
         <div id="document-nav" class="w-48 h-[calc(100dvh-3.5rem)] bg-[#181818] border-r-1 border-base">
-            <div class="flex justify-center w-full p-4 border-b-1 border-base">
-                <a
-                    href="/projects/{{ project.id }}/v/{{ project_version }}/documents/editor"
-                    class="btn-primary whitespace-nowrap"
-                >
-                    New Document
-                </a>
-            </div>
+            {% if permissions.write %}
+                <div class="flex justify-center w-full p-4 border-b-1 border-base">
+                    <a
+                        href="/projects/{{ project.id }}/v/{{ project_version }}/documents/editor"
+                        class="btn-primary whitespace-nowrap"
+                    >
+                        New Document
+                    </a>
+                </div>
+            {% endif %}
 
             {% if project_versions | length > 1 %}
                 <select
@@ -51,7 +53,7 @@
                             href="/projects/{{ project.id }}/v/{{ project_version }}/documents/{{ doc.id }}"
                             class="{% if doc is active_document(path) %}active{% endif %} !flex justify-between items-center">
                             <p>{{ doc.name }}</p>
-                            {% if is_latest_version %}
+                            {% if is_latest_version and permissions.delete %}
                                 <div
                                     id="delete-doc-{{ doc.id }}"
                                     hx-stop

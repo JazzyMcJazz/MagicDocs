@@ -285,7 +285,7 @@ pub enum Document {
 struct PermissionEnum;
 
 #[derive(DeriveIden, EnumIter)]
-enum Permission {
+pub enum Permission {
     Create,
     Read,
     Update,

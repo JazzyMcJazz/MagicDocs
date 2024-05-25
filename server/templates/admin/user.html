@@ -1,0 +1,73 @@
+{% extends 'admin/layout.html' %}
+
+{% block scripts %}
+    {{ super() }}
+    <script type="module" src="/static/js/manage-user.js"></script>
+{% endblock %}
+
+{% block content %}
+    <div class="p-10">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1>{{ kc_user.firstName }} {{ kc_user.lastName }}</h1>
+                <p class="text-sm">{{ kc_user.email }}</p>
+            </div>
+            <form id="save-user-form" action="/admin/users/{{ kc_user.id }}">
+                <button class="btn-primary">Save</button>
+            </form>
+        </div>
+        <hr class="mb-8" />
+
+        <h2 class="mb-2">User Roles</h2>
+        <div class="flex gap-8">
+            <div class="flex-1">
+                <h3>Available Roles</h3>
+                <select id="available-roles-select" name="role_id" class="w-full bg-[#121212] p-0 min-h-44" multiple size="5">
+                    {% for role in available_roles %}
+                        <option value="{{ role.id }}¤{{ role.name }}" class="p-2">{{ role.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flex flex-col gap-2 justify-center">
+                <button id="assign-role-btn" class="btn-primary">Assign</button>
+                <button id="remove-role-btn" class="btn-primary">Remove</button>
+            </div>
+
+            <div class="flex-1">
+                <h3>Assigned Roles</h3>
+                <select id="assigned-roles-select" name="role_id" class="w-full bg-[#121212] p-0 min-h-44" multiple size="5">
+                    {% for role in assigned_roles %}
+                        <option value="{{ role.id }}¤{{ role.name }}" class="p-2">{{ role.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <hr class="my-8" />
+
+        <h2 class="mb-2">User Level Project Permissions</h2>
+        <form id="user-permissions-form">
+            <table id="permission-table">
+                <thead>
+                    <tr>
+                        <th>Project</th>
+                        <th>Read</th>
+                        <th>Write</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for proj in user_projects %}
+                        <tr>
+                            <td>{{ proj.0.name }}</td>
+                            <td><input type="checkbox" name="{{ proj.0.id }}-read" {% if proj.1 is permitted('Read') %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="{{ proj.0.id }}-write" {% if proj.1 is permitted('Create') %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="{{ proj.0.id }}-delete" {% if proj.1 is permitted('Delete') %}checked{% endif %}></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </form>
+    </div>
+{% endblock %}

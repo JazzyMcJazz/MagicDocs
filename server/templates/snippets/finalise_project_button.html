@@ -1,5 +1,5 @@
 
-{% if not is_finalized %}
+{% if not is_finalized and permissions.write and documents | length > 0 %}
     <form id="finalize-project-button" method="post" action="/projects/{{ project.id }}/v/{{ project_version }}/finalize">
         <button class="btn-primary cursor-pointer">Finalize Version</button>
     </form>

@@ -6,7 +6,7 @@ mod response_types;
 
 pub use admin::Keycloak;
 pub use enums::GrantType;
-pub use response_types::TokenResponse;
+pub use response_types::{KeycloakRole, TokenResponse};
 
 use cache::*;
 use jwk::*;

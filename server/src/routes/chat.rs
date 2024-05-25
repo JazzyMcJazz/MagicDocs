@@ -15,25 +15,12 @@ use futures_util::StreamExt;
 use http::HeaderValue;
 use tokio::pin;
 
-struct Guard;
-
-impl Drop for Guard {
-    fn drop(&mut self) {
-        tracing::warn!("Chat guard dropped. Cleanup not implemented",);
-    }
-}
-
 // GET /
 pub async fn chat(
     State(data): State<AppState>,
     Path(path): Path<Slugs>,
     Form(form): Form<ChatForm>,
 ) -> Response {
-    // TODO: Implement authorization
-    // if not_authorized {
-    //     return Err(HttpResponse::Forbidden().finish());
-    // }
-
     let Some(project_id) = path.project_id() else {
         return HttpResponse::BadRequest().finish();
     };
@@ -42,7 +29,6 @@ pub async fn chat(
     };
 
     let stream = async_stream::stream! {
-        let _guard = Guard;
         let db = &data.conn;
         let lc = Langchain::new(LLMProvider::OpenAI);
         let prompt = form.message;

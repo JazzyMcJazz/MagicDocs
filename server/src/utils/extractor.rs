@@ -1,11 +1,14 @@
 use anyhow::{bail, Result};
-use axum::extract::Request;
+use axum::{extract::Request, Form, Json, RequestExt};
 use entity::project;
 use tera::Context;
 
-use crate::models::DocumentWithoutContent;
+use crate::{middleware::Permissions, models::DocumentWithoutContent};
 
-use super::{claims::Claims, context_data::UserData};
+use super::{
+    claims::{Claims, JwtTokens},
+    context_data::UserData,
+};
 
 pub struct Extractor;
 
@@ -16,6 +19,46 @@ impl Extractor {
             Some(claims) => Ok(claims.clone()),
             None => bail!("Claims not found in request"),
         }
+    }
+
+    pub fn tokens(req: &Request) -> Result<JwtTokens> {
+        let ext = req.extensions();
+        match ext.get::<JwtTokens>() {
+            Some(tokens) => Ok(tokens.clone()),
+            None => bail!("Tokens not found in request"),
+        }
+    }
+
+    pub fn permissions(req: &Request) -> Result<Permissions> {
+        let ext = req.extensions();
+        match ext.get::<Permissions>() {
+            Some(permissions) => Ok(permissions.clone()),
+            None => bail!("Permissions not found in request"),
+        }
+    }
+
+    pub async fn form_data<T>(req: Request) -> Result<Form<T>>
+    where
+        T: serde::de::DeserializeOwned + Clone + 'static,
+    {
+        let res = req
+            .extract::<Form<T>, _>()
+            .await
+            .map_err(|e| anyhow::anyhow!(e))?;
+
+        Ok(res)
+    }
+
+    pub async fn json<T>(req: Request) -> Result<T>
+    where
+        T: serde::de::DeserializeOwned + Clone + 'static,
+    {
+        let Json(res) = req
+            .extract::<Json<T>, _>()
+            .await
+            .map_err(|e| anyhow::anyhow!(e))?;
+
+        Ok(res)
     }
 
     pub fn _user_data(req: &Request) -> Result<UserData> {

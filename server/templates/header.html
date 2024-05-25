@@ -34,7 +34,6 @@
                 id="nav-user-menu"
                 class="hidden absolute right-0 top-12 bg-neutral-100 border-1 border-base rounded-md shadow-md py-2"
             >
-                <a href="/profile" class="nav-user-menu-item">Profile</a>
                 <a hx-post="/flush" class="nav-user-menu-item">Flush Permissions</a>
                 {% if user.is_admin %}
                     <a href="/admin" class="nav-user-menu-item">Manage</a>

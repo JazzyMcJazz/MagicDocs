@@ -25,6 +25,10 @@ impl HttpResponse {
         Self::build(StatusCode::BAD_REQUEST)
     }
     #[allow(non_snake_case)]
+    pub fn Unauthorized() -> HttpResponseBuilder {
+        Self::build(StatusCode::UNAUTHORIZED)
+    }
+    #[allow(non_snake_case)]
     pub fn Forbidden() -> HttpResponseBuilder {
         Self::build(StatusCode::FORBIDDEN)
     }

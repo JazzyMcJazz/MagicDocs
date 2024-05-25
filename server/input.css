@@ -146,6 +146,48 @@ nav a {
 	@apply bg-[#282828] cursor-default;
 }
 
+/* Admin Roles */
+#role-table {
+	@apply w-full border-collapse;
+}
+#role-table th {
+	@apply p-2 text-left;
+}
+#role-table tr:nth-child(even) {
+	@apply bg-[#202020];
+}
+#role-table tbody > tr {
+	@apply hover:bg-[#181818];
+}
+#role-table td {
+	@apply p-0
+}
+#role-table a {
+	@apply block text-gray-200 w-full h-10 p-2;
+}
+#permission-table th:first-child {
+	@apply p-2 text-left;
+}
+#permission-table th {
+	@apply px-2;
+}
+#permission-table tr:nth-child(even) {
+	@apply px-2 bg-[#202020];
+}
+#permission-table td {
+	@apply p-2 text-center border-1 border-base;
+}
+#permission-table td:first-child {
+	@apply pr-8 text-left;
+}
+#permission-table td input[type=checkbox] {
+	@apply bg-[#181818] rounded-sm shadow-none;
+	@apply focus:ring-0 focus:ring-offset-0 border-2 w-6 h-6;
+}
+#permission-table td input[type=checkbox]:checked {
+	@apply bg-pink-500/50;
+}
+
 /* Codemirror Editor */
 .cm-editor {
 	@apply w-full p-4 min-h-48 text-white bg-[#181818] border-2 border-base;

@@ -3,7 +3,7 @@ use std::str::FromStr;
 // use actix_web::{dev::ServiceRequest, middleware::Logger, web, App, HttpResponse, HttpServer};
 use axum::{
     middleware::{from_fn, from_fn_with_state},
-    routing::{any, get, head, post},
+    routing::{any, get, head, post, put},
     Router,
 };
 use http::StatusCode;
@@ -15,11 +15,7 @@ use tera::Tera;
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::log;
 
-use crate::{
-    keycloak::Keycloak,
-    middleware, routes,
-    utils::{config::Config, tera_testers},
-};
+use crate::{keycloak::Keycloak, middleware, routes, utils::tera_testers, CONFIG};
 
 #[derive(Debug, Clone)]
 pub struct AppState {
@@ -30,10 +26,8 @@ pub struct AppState {
 
 #[tokio::main]
 pub async fn run() -> std::io::Result<()> {
-    let config = Config::default();
-
-    let db_url = config.database_url();
-    let log_level = config.my_log();
+    let db_url = CONFIG.database_url();
+    let log_level = CONFIG.my_log();
     let filter = log::LevelFilter::from_str(log_level).unwrap_or(log::LevelFilter::Info);
 
     // Establish connection to the database
@@ -52,6 +46,7 @@ pub async fn run() -> std::io::Result<()> {
     };
     tera.register_tester("active_project", tera_testers::active_project);
     tera.register_tester("active_document", tera_testers::active_document);
+    tera.register_tester("permitted", tera_testers::permitted);
 
     let keycloak = Keycloak::new().await.unwrap();
 
@@ -116,13 +111,27 @@ fn app(state: AppState) -> Router {
             "/:project_id/v/:version/documents/:doc_id/edit",
             get(routes::document::editor),
         )
-        .layer(from_fn_with_state(true, middleware::authorization));
+        .layer(from_fn_with_state(
+            (true, state.to_owned()),
+            middleware::authorization,
+        ));
 
     let admin_router = Router::new()
         .route("/", get(routes::admin::dashboard))
         .route("/users", get(routes::admin::users))
+        .route("/users/:user_id", get(routes::admin::user_details))
+        .route("/users/:user_id", put(routes::admin::update_user))
         .route("/roles", get(routes::admin::roles))
-        .route("/permissions", get(routes::admin::permissions));
+        .route("/roles", post(routes::admin::create_role))
+        .route("/roles/:role_name", get(routes::admin::role_details))
+        .route(
+            "/roles/:role_name/permissions",
+            post(routes::admin::update_role_permissions),
+        )
+        .layer(from_fn_with_state(
+            (false, state.to_owned()),
+            middleware::authorization,
+        ));
 
     let main_router = Router::new()
         .route("/", get(routes::index))
@@ -131,11 +140,11 @@ fn app(state: AppState) -> Router {
         .nest("/projects", project_router)
         .nest("/admin", admin_router)
         .layer(from_fn_with_state(
-            state.clone(),
+            state.to_owned(),
             middleware::context_builder,
         ))
         .layer(from_fn_with_state(
-            state.clone(),
+            state.to_owned(),
             middleware::authentication,
         ));
 

@@ -1,0 +1,43 @@
+{% extends 'admin/layout.html' %}
+
+{% block scripts %}
+    {{ super() }}
+    <script type="module" src="/static/js/role-permissions.js"></script>
+{% endblock %}
+
+{% block content %}
+    <div class="p-10">
+        <h1>{{ role.name }}</h1>
+        <h4>{{ role.description }}</h4>
+        <hr class="mb-8" />
+
+        <form id="role-permissions-form" method="POST" action="/admin/roles/{{ role.name }}/permissions">
+            <div class="flex items-center gap-4 mb-4">
+                <h2 class="">Project Permissions</h2>
+                <input type="submit" value="Save" class="btn-primary">
+            </div>
+            <table id="permission-table">
+                <thead>
+                    <tr>
+                        <th>Project</th>
+                        <th>Read</th>
+                        <th>Write</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for proj in role_projects %}
+                        <tr>
+                            <td>{{ proj.0.name }}</td>
+                            <td><input type="checkbox" name="{{ proj.0.id }}-read" {% if proj.1 is permitted('Read') %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="{{ proj.0.id }}-write" {% if proj.1 is permitted('Create') %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="{{ proj.0.id }}-delete" {% if proj.1 is permitted('Delete') %}checked{% endif %}></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <input type="submit" value="Save" class="btn-primary mt-4">
+        </form>
+    </div>
+{% endblock %}

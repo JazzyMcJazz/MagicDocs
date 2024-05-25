@@ -3,5 +3,59 @@
 {% block content %}
     <div class="p-10">
         <h1>Roles</h1>
+        <hr/>
+
+        <div class="mt-8">
+            <h3>Create new role</h3>
+            <form method="POST" action="/admin/roles">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="name">Role Name</label>
+                        <input
+                            type="text"
+                            name="name"
+                            id="name"
+                            class="w-full p-2 border border-gray-300 rounded"
+                            required
+                        >
+                    </div>
+                    <div>
+                        <label for="description">Description</label>
+                        <input
+                            type="text"
+                            name="description"
+                            id="description"
+                            class="w-full p-2 border border-gray-300 rounded"
+                        >
+                    </div>
+                    <div>
+                        <button class="btn-primary">Create Role</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <table id="role-table" class="mt-8">
+            <thead>
+                <tr>
+                    <th>Role Name</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for role in roles %}
+                    {% set url = '/admin/roles/' ~ role.name | urlencode %}
+
+                    <tr>
+                        <td>
+                            <a href="{{ url }}">{{ role.name }}</a>
+                        </td>
+                        <td>
+                            <a href="{{ url }}">{{ role.description }}</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 {% endblock %}

@@ -55,14 +55,47 @@ impl<'a> ProjectRepo<'a> {
         }
     }
 
-    // pub async fn find_by_id(&self, id: i32) -> Result<Option<Model>> {
-    //     let res = Entity::find_by_id(id)
-    //         .one(self.0)
-    //         .await
-    //         .context("Failed to find project by id")?;
+    pub async fn all_with_user_permissions(
+        &self,
+        user_id: &str,
+    ) -> Result<Vec<(Model, Vec<user_permission::Model>)>> {
+        let projects = Entity::find()
+            .all(self.0)
+            .await
+            .context("Failed to get all projects")?;
 
-    //     Ok(res)
-    // }
+        let user_permissions = projects
+            .load_many(
+                user_permission::Entity::find().filter(user_permission::Column::UserId.eq(user_id)),
+                self.0,
+            )
+            .await?;
+
+        let res = projects.into_iter().zip(user_permissions).collect();
+
+        Ok(res)
+    }
+
+    pub async fn all_with_role_permissions(
+        &self,
+        role_id: &str,
+    ) -> Result<Vec<(Model, Vec<role_permission::Model>)>> {
+        let projects = Entity::find()
+            .all(self.0)
+            .await
+            .context("Failed to get all projects")?;
+
+        let role_permissions = projects
+            .load_many(
+                role_permission::Entity::find().filter(role_permission::Column::RoleId.eq(role_id)),
+                self.0,
+            )
+            .await?;
+
+        let res = projects.into_iter().zip(role_permissions).collect();
+
+        Ok(res)
+    }
 
     pub async fn create(&self, name: String, description: String) -> Result<i32> {
         let model = ActiveModel {

@@ -3,6 +3,8 @@ pipeline {
 
     environment {
         SSH_TARGET = credentials('SSH_TARGET')
+        KEYCLOAK_CLIENT_SECRET = credentials('KEYCLOAK_CLIENT_SECRET')
+        OPENAI_API_KEY = credentials('OPENAI_API_KEY')
     }
 
     stages {
@@ -18,17 +20,12 @@ pipeline {
         }
         stage('Run E2E Tests') {
             environment {
-                KEYCLOAK_ADMIN_USERNAME = credentials('KEYCLOAK_ADMIN_USERNAME')
-                KEYCLOAK_ADMIN_PASSWORD = credentials('KEYCLOAK_ADMIN_PASSWORD')
-                KEYCLOAK_CLIENT_SECRET = credentials('KEYCLOAK_CLIENT_SECRET')
                 KEYCLOAK_TEST_USER_USERNAME = credentials('KEYCLOAK_TEST_USER_USERNAME')
                 KEYCLOAK_TEST_USER_PASSWORD = credentials('KEYCLOAK_TEST_USER_PASSWORD')
                 KEYCLOAK_TEST_ADMIN_USERNAME = credentials('KEYCLOAK_TEST_ADMIN_USERNAME')
                 KEYCLOAK_TEST_ADMIN_PASSWORD = credentials('KEYCLOAK_TEST_ADMIN_PASSWORD')
                 KEYCLOAK_TEST_SUPERADMIN_USERNAME = credentials('KEYCLOAK_TEST_SUPERADMIN_USERNAME')
                 KEYCLOAK_TEST_SUPERADMIN_PASSWORD = credentials('KEYCLOAK_TEST_SUPERADMIN_PASSWORD')
-                OPENAI_API_KEY = credentials('OPENAI_API_KEY')
-
             }
             steps {
                 // Setup the test environment
@@ -84,7 +81,8 @@ pipeline {
                         -e KEYCLOAK_USER=$KEYCLOAK_ADMIN_USERNAME \
                         -e KEYCLOAK_PASSWORD=$KEYCLOAK_ADMIN_PASSWORD \
                         -e KEYCLOAK_REALM=magicdocs \
-                        -e KEYCLOAK_CLIENT=magicdocs \
+                        -e KEYCLOAK_CLIENT_NAME=magicdocs \
+                        -e KEYCLOAK_CLIENT_UUID=987b79aa-e278-4850-8b03-a0f2bf48e05d \
                         -e KEYCLOAK_CLIENT_SECRET=$KEYCLOAK_CLIENT_SECRET \
                         -e OPENAI_API_KEY=$OPENAI_API_KEY \
                         -p 3000:3000 \
@@ -140,10 +138,6 @@ pipeline {
                 PG_PASS = credentials('PG_PASS')
                 MD_DB_USER = credentials('MD_DB_USER')
                 MD_DB_PASS = credentials('MD_DB_PASS')
-                KEYCLOAK_ADMIN_USERNAME = credentials('KEYCLOAK_ADMIN_USERNAME')
-                KEYCLOAK_ADMIN_PASSWORD = credentials('KEYCLOAK_ADMIN_PASSWORD')
-                KEYCLOAK_CLIENT_SECRET = credentials('KEYCLOAK_CLIENT_SECRET')
-                OPENAI_API_KEY = credentials('OPENAI_API_KEY')
             }
             steps {
                 echo 'Saving Docker images'
@@ -172,7 +166,8 @@ pipeline {
                                 -e KEYCLOAK_USER=\\$KEYCLOAK_ADMIN_USERNAME \
                                 -e KEYCLOAK_PASSWORD=\\$KEYCLOAK_ADMIN_PASSWORD \
                                 -e KEYCLOAK_REALM=magicdocs \
-                                -e KEYCLOAK_CLIENT=magicdocs \
+                                -e KEYCLOAK_CLIENT_NAME=magicdocs \
+                                -e KEYCLOAK_CLIENT_UUID=987b79aa-e278-4850-8b03-a0f2bf48e05d \
                                 -e KEYCLOAK_CLIENT_SECRET=\\$KEYCLOAK_CLIENT_SECRET \
                                 -e OPENAI_API_KEY=\\$OPENAI_API_KEY \
                                 -o docs.treeleaf.dev \

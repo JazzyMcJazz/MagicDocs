@@ -22,6 +22,14 @@ use crate::{
 };
 
 pub async fn new(data: State<AppState>, req: Request) -> Response {
+    let Ok(permissions) = Extractor::permissions(&req) else {
+        return HttpResponse::InternalServerError().finish();
+    };
+
+    if !permissions.write() {
+        return HttpResponse::Forbidden().finish();
+    }
+
     let context = Extractor::context(&req);
     let tera = &data.tera;
 
@@ -139,7 +147,7 @@ pub async fn detail(
     let tera = &data.tera;
     let db = &data.conn;
 
-    let (Some(project_id), Some(version), Some(doc_id)) = path.all() else {
+    let (Some(project_id), Some(version), Some(doc_id)) = path.project_all() else {
         return HttpResponse::BadRequest().finish();
     };
 
@@ -192,7 +200,7 @@ pub async fn patch(
 ) -> Response {
     let db = &data.conn;
 
-    let (Some(project_id), Some(version), Some(doc_id)) = path.all() else {
+    let (Some(project_id), Some(version), Some(doc_id)) = path.project_all() else {
         return HttpResponse::BadRequest().finish();
     };
 
@@ -227,7 +235,7 @@ pub async fn editor(data: State<AppState>, Path(path): Path<Slugs>, req: Request
     let tera = &data.tera;
     let db = &data.conn;
 
-    let (Some(project_id), Some(version), Some(doc_id)) = path.all() else {
+    let (Some(project_id), Some(version), Some(doc_id)) = path.project_all() else {
         return HttpResponse::BadRequest().finish();
     };
 

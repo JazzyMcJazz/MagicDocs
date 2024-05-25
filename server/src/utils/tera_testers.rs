@@ -50,3 +50,26 @@ pub fn active_document(value: Option<&Value>, args: &[Value]) -> Result<bool> {
 
     Ok(false)
 }
+
+pub fn permitted(value: Option<&Value>, args: &[Value]) -> Result<bool> {
+    let permission = match args.first() {
+        Some(v) => v.to_string().replace('"', ""),
+        None => return Ok(false),
+    };
+
+    let Some(values) = value else {
+        return Ok(false);
+    };
+
+    let values = values.as_array().unwrap();
+
+    for val in values {
+        if let Some(t) = val.get("type") {
+            if t.to_string().replace('"', "").eq(&permission) {
+                return Ok(true);
+            }
+        }
+    }
+
+    Ok(false)
+}

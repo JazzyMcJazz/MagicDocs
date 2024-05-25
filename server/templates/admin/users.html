@@ -1,7 +1,39 @@
 {% extends 'admin/layout.html' %}
 
 {% block content %}
-    <div class="p-10">
-        <h1>Users</h1>
-    </div>
+<div class="p-10">
+    <h1>Users</h1>
+    <hr/>
+
+    <table id="role-table" class="mt-8">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Verified</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+                <tr>
+                    <td>
+                        <a href="/admin/users/{{ user.id }}">{{ user.firstName }} {{ user.lastName }}</a>
+                    </td>
+                    <td>
+                        <a href="/admin/users/{{ user.id }}">{{ user.email }}</a>
+                    </td>
+                    <td>
+                        <a href="/admin/users/{{ user.id }}">
+                            {% if user.emailVerified %}
+                                Yes
+                            {% else %}
+                                No
+                            {% endif %}
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}

@@ -5,7 +5,7 @@
         <div class="flex justify-between items-center">
             <div class="flex gap-2 items-center">
                 <h1>{{ document.name }}</h1>
-                {% if is_latest_version %}
+                {% if is_latest_version and permissions.write %}
                     <div
                         hx-get="/projects/{{ project.id }}/v/{{ project_version }}/documents/{{ document.id }}/edit"
                         hx-target="#doc-parent"

@@ -1,5 +1,7 @@
 use dotenvy::dotenv;
 use env_logger::Env;
+use once_cell::sync::Lazy;
+use utils::config::Config;
 
 mod database;
 mod keycloak;
@@ -12,6 +14,8 @@ mod routes;
 mod server;
 mod utils;
 mod web_crawler;
+
+static CONFIG: Lazy<Config> = Lazy::new(Config::default);
 
 fn main() {
     dotenv().ok();

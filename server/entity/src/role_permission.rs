@@ -8,7 +8,7 @@ use serde::Serialize;
 #[sea_orm(table_name = "role_permission")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    pub role_id: i32,
+    pub role_id: String,
     #[sea_orm(primary_key, auto_increment = false)]
     pub project_id: i32,
     #[sea_orm(primary_key, auto_increment = false)]

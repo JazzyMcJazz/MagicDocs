@@ -1,5 +1,26 @@
 use serde::Deserialize;
 
+#[derive(Debug, Clone)]
+pub struct JwtTokens {
+    _id_token: String,
+    access_token: String,
+}
+
+impl JwtTokens {
+    pub fn new(_id_token: String, access_token: String) -> Self {
+        Self {
+            _id_token,
+            access_token,
+        }
+    }
+    pub fn _id_token(&self) -> &str {
+        &self._id_token
+    }
+    pub fn access_token(&self) -> &str {
+        &self.access_token
+    }
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[allow(dead_code)]
 pub struct Claims {
@@ -23,6 +44,8 @@ pub struct Claims {
 #[allow(dead_code)]
 pub struct ResourceAccess {
     magicdocs: Option<Client>,
+    #[serde(rename = "realm-management")]
+    realm_management: Option<Client>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -57,16 +80,15 @@ impl Claims {
         self.family_name.clone()
     }
     pub fn is_admin(&self) -> bool {
-        match self.resource_access.magicdocs {
-            Some(ref client) => {
-                client.roles.contains(&"admin".to_string()) || self.is_super_admin()
+        self.is_super_admin()
+            || match self.resource_access.magicdocs {
+                Some(ref client) => client.roles.contains(&"admin".to_string()),
+                None => false,
             }
-            None => false,
-        }
     }
     pub fn is_super_admin(&self) -> bool {
-        match self.resource_access.magicdocs {
-            Some(ref client) => client.roles.contains(&"super_admin".to_string()),
+        match self.resource_access.realm_management {
+            Some(ref client) => !client.roles.is_empty(),
             None => false,
         }
     }

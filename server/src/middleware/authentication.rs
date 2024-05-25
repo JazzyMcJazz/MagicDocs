@@ -12,7 +12,7 @@ use crate::{
     keycloak::GrantType,
     responses::HttpResponse,
     server::AppState,
-    utils::{cookies, info::ConnectionInfo},
+    utils::{claims::JwtTokens, cookies, info::ConnectionInfo},
 };
 
 pub async fn authentication(
@@ -57,20 +57,29 @@ pub async fn authentication(
 
     // Check if the user has a valid tokens or try to refresh the tokens
     let cookies = CookieJar::from_headers(req.headers());
-    let (Some(_), Some(access_token)) = (cookies.get("id"), cookies.get("ac")) else {
+    let (Some(id_token), Some(access_token)) = (cookies.get("id"), cookies.get("ac")) else {
         if let Some(refresh_token) = cookies.get("rf") {
             let refresh_token = refresh_token.clone();
 
-            let Ok(tokens) = app_data
+            let tokens = match app_data
                 .keycloak
                 .exchange_token(
                     GrantType::RefreshToken(refresh_token.value()),
                     &info.to_url(),
                 )
                 .await
-            else {
-                tracing::error!("Error exchanging refresh token");
-                return HttpResponse::InternalServerError().finish();
+            {
+                Ok(token) => token,
+                Err(e) => {
+                    tracing::error!("Error exchanging refresh token: {:?}", e);
+                    let cookies = cookies::expire();
+                    return HttpResponse::build(StatusCode::FOUND)
+                        .cookie(cookies.0)
+                        .cookie(cookies.1)
+                        .cookie(cookies.2)
+                        .insert_header((LOCATION, info.path().to_owned()))
+                        .finish();
+                }
             };
 
             let Ok(cookies) = cookies::from_token_response(tokens) else {
@@ -105,10 +114,12 @@ pub async fn authentication(
 
     // Validate the access token and execute the service call
     let access_token = access_token.clone();
+    let tokens = JwtTokens::new(id_token.value().to_owned(), access_token.value().to_owned());
 
     match app_data.keycloak.validate_token(access_token.value()).await {
         Ok(claims) => {
             req.extensions_mut().insert(claims);
+            req.extensions_mut().insert(tokens);
             next.run(req).await
         }
         Err(_) => {
