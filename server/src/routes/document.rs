@@ -5,7 +5,7 @@ use axum::{
 };
 use futures_util::{pin_mut, StreamExt};
 use http::{HeaderMap, HeaderName, HeaderValue, Method, StatusCode};
-use std::{convert::Infallible, time::Duration};
+use std::convert::Infallible;
 use tokio::time::sleep;
 
 use crate::{
@@ -126,11 +126,7 @@ pub async fn crawler(
         sleep(std::time::Duration::from_secs(1)).await;
     };
 
-    let sse = Sse::new(stream).keep_alive(
-        axum::response::sse::KeepAlive::new()
-            .interval(Duration::from_secs(1))
-            .text("keep-alive-text"),
-    );
+    let sse = Sse::new(stream);
 
     let mut res = sse.into_response();
     res.headers_mut()

@@ -33,11 +33,19 @@ pub async fn new(State(data): State<AppState>, req: Request) -> Response {
 }
 
 // ListView: /projects
-pub async fn create(
-    State(data): State<AppState>,
-    headers: HeaderMap,
-    Form(form): Form<CreateProjectForm>,
-) -> Response {
+pub async fn create(State(data): State<AppState>, headers: HeaderMap, req: Request) -> Response {
+    let Ok(user) = Extractor::claims(&req) else {
+        return HttpResponse::InternalServerError().finish();
+    };
+
+    if !user.is_admin() {
+        return HttpResponse::Forbidden().finish();
+    }
+
+    let Ok(Form(form)) = Extractor::form_data::<CreateProjectForm>(req).await else {
+        return HttpResponse::BadRequest().finish();
+    };
+
     let db = &data.conn;
 
     let Ok(id) = db.projects().create(form.name, form.description).await else {

@@ -295,8 +295,6 @@ pub async fn update_role_permissions(
         }
     };
 
-    dbg!(&permissions);
-
     let mut create_permissions = Vec::new();
     let mut delete_permissions = Vec::new();
     for (project_id, role) in permissions.data.iter() {

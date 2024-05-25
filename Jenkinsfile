@@ -163,8 +163,6 @@ pipeline {
                                 -e RUST_BACKTRACE=0 \
                                 -e DATABASE_URL=postgres://magicdocs:\\$MD_DB_PASS@db:5432/magicdocs \
                                 -e KEYCLOAK_URL=https://kc.treeleaf.dev \
-                                -e KEYCLOAK_USER=\\$KEYCLOAK_ADMIN_USERNAME \
-                                -e KEYCLOAK_PASSWORD=\\$KEYCLOAK_ADMIN_PASSWORD \
                                 -e KEYCLOAK_REALM=magicdocs \
                                 -e KEYCLOAK_CLIENT_NAME=magicdocs \
                                 -e KEYCLOAK_CLIENT_UUID=987b79aa-e278-4850-8b03-a0f2bf48e05d \

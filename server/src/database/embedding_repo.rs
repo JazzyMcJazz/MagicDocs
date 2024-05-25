@@ -94,7 +94,7 @@ impl<'a> EmbeddingRepo<'a> {
                 text: row.try_get::<String>("", "text").unwrap_or_default(),
                 score: row.try_get::<f64>("", "score").unwrap_or_default(),
             })
-            .filter(|r| r.score >= 0.6) // TODO: Filter in database query
+            .filter(|r| r.score >= 0.6)
             .collect();
 
         Ok(result)
