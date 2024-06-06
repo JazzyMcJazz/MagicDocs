@@ -199,7 +199,10 @@ pub async fn finalize_project_version(
         langchain::{LLMProvider, Langchain},
         server::AppState,
     };
-    use leptos::use_context;
+    use http::header::{HeaderName, HeaderValue};
+    use leptos::{expect_context, use_context};
+    use leptos_axum::ResponseOptions;
+    use std::str::FromStr;
 
     tracing::info!("Finalizing project version: {} - {}", project_id, version);
 
@@ -208,6 +211,8 @@ pub async fn finalize_project_version(
             "Failed to get app state".to_string(),
         ));
     };
+
+    let response = expect_context::<ResponseOptions>();
 
     let db = state.conn;
 
@@ -259,6 +264,11 @@ pub async fn finalize_project_version(
             db.projects_versions().finalize(project_id, version).await.ok();
         }
     };
+
+    if let Ok(key) = HeaderName::from_str("X-Accel-Buffering") {
+        let value = HeaderValue::from_static("no");
+        response.insert_header(key, value);
+    }
 
     Ok(TextStream::new(stream))
 }

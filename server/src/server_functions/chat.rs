@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use leptos::{
     server,
     server_fn::codec::{StreamingText, TextStream},
@@ -20,6 +18,7 @@ pub async fn chat(
     use http::header::{HeaderName, HeaderValue};
     use leptos::{expect_context, use_context};
     use leptos_axum::ResponseOptions;
+    use std::str::FromStr;
     use tokio::pin;
 
     let Some(state) = use_context::<AppState>() else {
