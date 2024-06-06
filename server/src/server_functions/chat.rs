@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use leptos::{
     server,
     server_fn::codec::{StreamingText, TextStream},
@@ -15,7 +17,9 @@ pub async fn chat(
         server::AppState,
     };
     use futures_util::StreamExt;
-    use leptos::use_context;
+    use http::header::{HeaderName, HeaderValue};
+    use leptos::{expect_context, use_context};
+    use leptos_axum::ResponseOptions;
     use tokio::pin;
 
     let Some(state) = use_context::<AppState>() else {
@@ -23,6 +27,8 @@ pub async fn chat(
             "Failed to get app state".to_string(),
         ));
     };
+
+    let response = expect_context::<ResponseOptions>();
 
     let stream = async_stream::stream! {
         let db = &state.conn;
@@ -59,6 +65,11 @@ pub async fn chat(
             }
         }
     };
+
+    if let Ok(key) = HeaderName::from_str("X-Accel-Buffering") {
+        let value = HeaderValue::from_static("no");
+        response.insert_header(key, value);
+    }
 
     Ok(TextStream::new(stream))
 }
