@@ -16,30 +16,30 @@ pub struct HttpResponseBuilder {
 }
 
 impl HttpResponse {
-    #[allow(non_snake_case)]
-    pub fn Ok() -> Self {
-        Self
-    }
+    // #[allow(non_snake_case)]
+    // pub fn Ok() -> Self {
+    //     Self
+    // }
     #[allow(non_snake_case)]
     pub fn BadRequest() -> HttpResponseBuilder {
         Self::build(StatusCode::BAD_REQUEST)
     }
-    #[allow(non_snake_case)]
-    pub fn Unauthorized() -> HttpResponseBuilder {
-        Self::build(StatusCode::UNAUTHORIZED)
-    }
-    #[allow(non_snake_case)]
-    pub fn Forbidden() -> HttpResponseBuilder {
-        Self::build(StatusCode::FORBIDDEN)
-    }
-    #[allow(non_snake_case)]
-    pub fn NotFound() -> HttpResponseBuilder {
-        Self::build(StatusCode::NOT_FOUND)
-    }
-    #[allow(non_snake_case)]
-    pub fn MethodNotAllowed() -> HttpResponseBuilder {
-        Self::build(StatusCode::METHOD_NOT_ALLOWED)
-    }
+    // #[allow(non_snake_case)]
+    // pub fn Unauthorized() -> HttpResponseBuilder {
+    //     Self::build(StatusCode::UNAUTHORIZED)
+    // }
+    // #[allow(non_snake_case)]
+    // pub fn Forbidden() -> HttpResponseBuilder {
+    //     Self::build(StatusCode::FORBIDDEN)
+    // }
+    // #[allow(non_snake_case)]
+    // pub fn NotFound() -> HttpResponseBuilder {
+    //     Self::build(StatusCode::NOT_FOUND)
+    // }
+    // #[allow(non_snake_case)]
+    // pub fn MethodNotAllowed() -> HttpResponseBuilder {
+    //     Self::build(StatusCode::METHOD_NOT_ALLOWED)
+    // }
     #[allow(non_snake_case)]
     pub fn InternalServerError() -> HttpResponseBuilder {
         Self::build(StatusCode::INTERNAL_SERVER_ERROR)
@@ -62,10 +62,10 @@ impl HttpResponse {
 }
 
 impl HttpResponseBuilder {
-    pub fn body<S: AsRef<str>>(mut self, body: S) -> Self {
-        self.body = body.as_ref().to_string();
-        self
-    }
+    // pub fn body<S: AsRef<str>>(mut self, body: S) -> Self {
+    //     self.body = body.as_ref().to_string();
+    //     self
+    // }
 
     pub fn insert_header<N>(mut self, header: (N, String)) -> Self
     where

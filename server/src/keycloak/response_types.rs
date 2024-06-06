@@ -33,11 +33,21 @@ pub struct KeycloakRole {
 }
 
 impl KeycloakRole {
+    pub fn new(id: String, name: String, description: Option<String>) -> Self {
+        Self {
+            id,
+            name,
+            description,
+        }
+    }
     pub fn id(&self) -> &String {
         &self.id
     }
     pub fn name(&self) -> &String {
         &self.name
+    }
+    pub fn description(&self) -> Option<String> {
+        self.description.to_owned()
     }
 }
 
@@ -59,4 +69,47 @@ impl KeycloakRoleMapping {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KeycloakRoleMappingMappings {
     mappings: Vec<KeycloakRole>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KeycloakUser {
+    #[serde(rename = "createdTimestamp")]
+    created_timestamp: i128,
+    email: String,
+    #[serde(rename = "emailVerified")]
+    email_verified: bool,
+    enabled: bool,
+    #[serde(rename = "firstName")]
+    first_name: String,
+    id: String,
+    #[serde(rename = "lastName")]
+    last_name: String,
+    username: String,
+}
+
+impl KeycloakUser {
+    pub fn created_timestamp(&self) -> i128 {
+        self.created_timestamp
+    }
+    pub fn email(&self) -> &String {
+        &self.email
+    }
+    pub fn email_verified(&self) -> bool {
+        self.email_verified
+    }
+    pub fn enabled(&self) -> bool {
+        self.enabled
+    }
+    pub fn first_name(&self) -> &String {
+        &self.first_name
+    }
+    pub fn id(&self) -> &String {
+        &self.id
+    }
+    pub fn last_name(&self) -> &String {
+        &self.last_name
+    }
+    pub fn username(&self) -> &String {
+        &self.username
+    }
 }

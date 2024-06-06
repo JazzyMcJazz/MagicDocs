@@ -4,21 +4,6 @@ use migration::sea_orm::{
     ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set, TransactionTrait,
 };
 
-trait IntoString {
-    fn to_string(&self) -> String;
-}
-
-impl IntoString for PermissionEnum {
-    fn to_string(&self) -> String {
-        match self {
-            PermissionEnum::Create => "create".to_owned(),
-            PermissionEnum::Read => "read".to_owned(),
-            PermissionEnum::Update => "update".to_owned(),
-            PermissionEnum::Delete => "delete".to_owned(),
-        }
-    }
-}
-
 pub struct UserPermissionRepo<'a>(&'a DatabaseConnection);
 
 impl<'a> UserPermissionRepo<'a> {
@@ -43,7 +28,7 @@ impl<'a> UserPermissionRepo<'a> {
     pub async fn create_many_for_user(
         &self,
         user_id: &str,
-        permissions: Vec<(&i32, PermissionEnum)>,
+        permissions: Vec<(i32, PermissionEnum)>,
     ) -> Result<()> {
         let models = permissions
             .iter()
@@ -64,7 +49,7 @@ impl<'a> UserPermissionRepo<'a> {
     pub async fn delete_many_for_user(
         &self,
         user_id: &str,
-        permissions: Vec<(&i32, PermissionEnum)>,
+        permissions: Vec<(i32, PermissionEnum)>,
     ) -> Result<()> {
         let tnx = self.0.begin().await?;
 
@@ -111,7 +96,7 @@ impl<'a> RolePermissionRepo<'a> {
     pub async fn create_many_for_role(
         &self,
         role_name: &str,
-        permissions: Vec<(&i32, PermissionEnum)>,
+        permissions: Vec<(i32, PermissionEnum)>,
     ) -> Result<()> {
         let models = permissions
             .iter()
@@ -132,7 +117,7 @@ impl<'a> RolePermissionRepo<'a> {
     pub async fn delete_many_for_role(
         &self,
         role_name: &str,
-        permissions: Vec<(&i32, PermissionEnum)>,
+        permissions: Vec<(i32, PermissionEnum)>,
     ) -> Result<()> {
         let tnx = self.0.begin().await?;
 

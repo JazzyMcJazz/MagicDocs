@@ -6,7 +6,6 @@ use axum::{
 };
 use axum_extra::extract::CookieJar;
 use http::header::LOCATION;
-use tera::Context;
 
 use crate::{
     keycloak::GrantType,
@@ -15,6 +14,7 @@ use crate::{
     utils::{claims::JwtTokens, cookies, info::ConnectionInfo},
 };
 
+#[cfg(feature = "ssr")]
 pub async fn authentication(
     State(app_data): State<AppState>,
     mut req: Request,
@@ -102,15 +102,6 @@ pub async fn authentication(
             .insert_header((LOCATION, dest))
             .finish();
     };
-
-    // Add the current path to the context
-    let mut context = Context::new();
-    context.insert("path", info.path());
-
-    // Add the context to the request extensions
-    if req.method() == "GET" {
-        req.extensions_mut().insert(context);
-    }
 
     // Validate the access token and execute the service call
     let access_token = access_token.clone();

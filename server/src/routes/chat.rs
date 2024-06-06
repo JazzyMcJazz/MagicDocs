@@ -37,7 +37,7 @@ pub async fn chat(
             db,
             project_id,
             version,
-            &prompt) {
+            &prompt).await {
             Ok(stream) => stream,
             Err(e) => {
                 tracing::error!("Error: {:?}", e);

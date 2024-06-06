@@ -1,27 +1,33 @@
-use std::str::FromStr;
+use std::str::FromStr as _;
 
-// use actix_web::{dev::ServiceRequest, middleware::Logger, web, App, HttpResponse, HttpServer};
 use axum::{
+    extract::FromRef,
     middleware::{from_fn, from_fn_with_state},
-    routing::{any, get, head, post, put},
+    routing::{get, head, post},
     Router,
 };
 use http::StatusCode;
+use leptos::{get_configuration, provide_context, LeptosOptions};
+use leptos_axum::{generate_route_list, LeptosRoutes};
 use migration::{
     sea_orm::{ConnectOptions, Database, DatabaseConnection},
     Migrator, MigratorTrait,
 };
-use tera::Tera;
-use tower_http::{services::ServeDir, trace::TraceLayer};
+use tower_http::trace::TraceLayer;
 use tracing::log;
 
-use crate::{keycloak::Keycloak, middleware, routes, utils::tera_testers, CONFIG};
+use crate::{
+    fallback::file_and_error_handler, keycloak::Keycloak, middleware, routes, wasm::app::App,
+    CONFIG,
+};
 
-#[derive(Debug, Clone)]
+#[derive(FromRef, Debug, Clone)]
 pub struct AppState {
+    #[from_ref(skip)]
     pub conn: DatabaseConnection,
-    pub tera: Tera,
+    #[from_ref(skip)]
     pub keycloak: Keycloak,
+    pub leptos_options: LeptosOptions,
 }
 
 #[tokio::main]
@@ -40,120 +46,57 @@ pub async fn run() -> std::io::Result<()> {
     // Apply database migrations
     Migrator::up(&conn, None).await.unwrap();
 
-    // Initialize Tera template engine
-    let Ok(mut tera) = Tera::new("templates/**/*") else {
-        panic!("Failed to initialize Tera template engine");
-    };
-    tera.register_tester("active_project", tera_testers::active_project);
-    tera.register_tester("active_document", tera_testers::active_document);
-    tera.register_tester("permitted", tera_testers::permitted);
+    let keycloak = Keycloak::default();
 
-    let keycloak = Keycloak::new().await.unwrap();
+    let conf = get_configuration(None).await.unwrap();
+    let leptos_options = conf.leptos_options.to_owned();
 
     // Build app state
     let state = AppState {
         conn,
-        tera,
         keycloak,
+        leptos_options,
     };
 
     let app = app(state);
+    let addr = "0.0.0.0:3000";
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-
+    tracing::info!("Listening on: {}", addr);
     axum::serve(listener, app).await.unwrap();
 
     Ok(())
 }
 
 fn app(state: AppState) -> Router {
-    let static_files_router = Router::new()
-        .nest_service("/", ServeDir::new("static"))
-        .layer(from_fn(middleware::headers::cache_control));
-
     let health_router = Router::new()
         .route("/", get(StatusCode::OK))
         .route("/", head(StatusCode::OK));
 
-    let browser_sync_router = Router::new().route("/", get(routes::browser_sync::sse));
-
-    let project_router = Router::new()
-        .route("/", post(routes::projects::create))
-        .route("/new", get(routes::projects::new))
-        .route("/:project_id", get(routes::projects::redirect_to_latest))
-        .route("/:project_id/v/:version", get(routes::projects::detail))
-        .route("/:project_id/v/:version/chat", post(routes::chat))
-        .route(
-            "/:project_id/v/:version/finalize",
-            post(routes::projects::finalize),
-        )
-        .route(
-            "/:project_id/v/:version/documents",
-            post(routes::document::create),
-        )
-        .route(
-            "/:project_id/v/:version/documents/editor",
-            get(routes::document::new),
-        )
-        .route(
-            "/:project_id/v/:version/documents/crawler",
-            get(routes::document::new),
-        )
-        .route(
-            "/:project_id/v/:version/documents/crawler",
-            post(routes::document::crawler),
-        )
-        .route(
-            "/:project_id/v/:version/documents/:doc_id",
-            any(routes::document::detail).patch(routes::document::patch),
-        )
-        .route(
-            "/:project_id/v/:version/documents/:doc_id/edit",
-            get(routes::document::editor),
-        )
-        .layer(from_fn_with_state(
-            (true, state.to_owned()),
-            middleware::authorization,
-        ));
-
-    let admin_router = Router::new()
-        .route("/", get(routes::admin::dashboard))
-        .route("/users", get(routes::admin::users))
-        .route("/users/:user_id", get(routes::admin::user_details))
-        .route("/users/:user_id", put(routes::admin::update_user))
-        .route("/roles", get(routes::admin::roles))
-        .route("/roles", post(routes::admin::create_role))
-        .route("/roles/:role_name", get(routes::admin::role_details))
-        .route(
-            "/roles/:role_name/permissions",
-            post(routes::admin::update_role_permissions),
-        )
-        .layer(from_fn_with_state(
-            (false, state.to_owned()),
-            middleware::authorization,
-        ));
-
-    let main_router = Router::new()
-        .route("/", get(routes::index))
+    let auth_router = Router::new()
         .route("/logout", post(routes::logout))
-        .route("/flush", post(routes::refresh))
-        .nest("/projects", project_router)
-        .nest("/admin", admin_router)
-        .layer(from_fn_with_state(
-            state.to_owned(),
-            middleware::context_builder,
-        ))
+        .route("/refresh", post(routes::refresh));
+
+    let paths = generate_route_list(App);
+
+    Router::new()
+        .leptos_routes_with_context(
+            &state,
+            paths,
+            {
+                let app_state = state.to_owned();
+                move || provide_context(app_state.to_owned())
+            },
+            App,
+        )
+        .fallback(file_and_error_handler)
+        .layer(from_fn(middleware::headers::default))
         .layer(from_fn_with_state(
             state.to_owned(),
             middleware::authentication,
-        ));
-
-    Router::new()
+        ))
         .nest("/health", health_router)
-        .nest("/static", static_files_router)
-        .nest("/browser-sync", browser_sync_router)
-        .nest("/", main_router)
-        .layer(from_fn(middleware::headers::default))
+        .nest("/auth", auth_router)
         .layer(TraceLayer::new_for_http())
         .with_state(state)
 }

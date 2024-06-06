@@ -1,5 +1,7 @@
 /target
+/node_modules
 /migration/target
 tailwindcss-linux-x64
-/static/css/styles.css
-/static/js
+/public/css/styles.css
+/public/js
+/style/output.css

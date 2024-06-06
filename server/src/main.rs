@@ -1,22 +1,8 @@
 use dotenvy::dotenv;
 use env_logger::Env;
-use once_cell::sync::Lazy;
-use utils::config::Config;
+use magicdocs::server;
 
-mod database;
-mod keycloak;
-mod langchain;
-mod middleware;
-mod models;
-mod parsing;
-mod responses;
-mod routes;
-mod server;
-mod utils;
-mod web_crawler;
-
-static CONFIG: Lazy<Config> = Lazy::new(Config::default);
-
+#[cfg(feature = "ssr")]
 fn main() {
     dotenv().ok();
 
@@ -28,4 +14,9 @@ fn main() {
     );
 
     let _ = server::run();
+}
+
+#[cfg(not(feature = "ssr"))]
+pub fn main() {
+    // no client-side main function
 }

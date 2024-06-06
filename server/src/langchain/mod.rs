@@ -24,7 +24,7 @@ impl Langchain {
         }
     }
 
-    pub fn chat_completion<'a>(
+    pub async fn chat_completion<'a>(
         &self,
         db: &'a DatabaseConnection,
         project_id: i32,
@@ -32,7 +32,7 @@ impl Langchain {
         prompt: &'a str,
     ) -> Result<impl Stream<Item = Result<LLMOutput>> + 'a> {
         match self.0 {
-            LLMProvider::OpenAI => OpenAI::event_loop(db, project_id, version, prompt),
+            LLMProvider::OpenAI => OpenAI::event_loop(db, project_id, version, prompt).await,
         }
     }
 }

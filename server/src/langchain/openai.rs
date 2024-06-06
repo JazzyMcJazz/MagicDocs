@@ -111,14 +111,18 @@ impl OpenAI {
         Ok(vec)
     }
 
-    pub fn event_loop<'a>(
+    pub async fn event_loop<'a>(
         db: &'a DatabaseConnection,
         project_id: i32,
         version: i32,
         prompt: &'a str,
     ) -> Result<impl Stream<Item = Result<LLMOutput>> + 'a> {
+        let Ok(Some(project)) = db.projects().find_by_id(project_id).await else {
+            bail!("Project with id '{project_id}' not found");
+        };
+
         let stream = async_stream::stream! {
-            let mut request = OpenaiCompletionRequest::default();
+            let mut request = OpenaiCompletionRequest::new(project, version);
             request.add_user_msg(prompt);
 
             'request_loop: loop {
@@ -253,6 +257,13 @@ impl OpenAI {
             .json(&json)
             .send()
             .await?;
+
+        if !res.status().is_success() {
+            let status = res.status();
+            let text = res.text().await?;
+            tracing::error!("Completion request failed with message: {:?}", text);
+            bail!("Completion request failed with status: {:?}", status);
+        }
 
         let stream = async_stream::stream! {
             let mut buffer = String::new();

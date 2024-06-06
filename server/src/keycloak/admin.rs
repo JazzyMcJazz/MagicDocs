@@ -11,7 +11,7 @@ use crate::{
 
 use super::{
     jwk::Jwks,
-    response_types::{KeycloakRole, KeycloakRoleMapping},
+    response_types::{KeycloakRole, KeycloakRoleMapping, KeycloakUser},
     GrantType, JwksCache,
 };
 
@@ -19,13 +19,15 @@ pub struct Keycloak {
     jwk_cache: Arc<Mutex<LruCache<&'static str, JwksCache>>>,
 }
 
-impl Keycloak {
-    pub async fn new() -> Result<Self> {
-        Ok(Self {
+impl Default for Keycloak {
+    fn default() -> Self {
+        Self {
             jwk_cache: Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(1).unwrap()))),
-        })
+        }
     }
+}
 
+impl Keycloak {
     pub async fn exchange_token(
         &self,
         grant_type: GrantType<'_>,
@@ -110,10 +112,7 @@ impl Keycloak {
         Ok(())
     }
 
-    pub async fn get_users(
-        tokens: &JwtTokens,
-        search: Option<&str>,
-    ) -> Result<Vec<serde_json::Value>> {
+    pub async fn get_users(tokens: &JwtTokens, search: Option<&str>) -> Result<Vec<KeycloakUser>> {
         let client = reqwest::Client::new();
         let base_url = CONFIG.keycloak_url();
         let realm_id = CONFIG.keycloak_realm();
@@ -129,11 +128,11 @@ impl Keycloak {
             .send()
             .await?;
 
-        let users = res.json::<Vec<serde_json::Value>>().await?;
+        let users = res.json::<Vec<KeycloakUser>>().await?;
         Ok(users)
     }
 
-    pub async fn get_user(tokens: &JwtTokens, id: &str) -> Result<serde_json::Value> {
+    pub async fn get_user(tokens: &JwtTokens, id: &str) -> Result<KeycloakUser> {
         let client = reqwest::Client::new();
         let base_url = CONFIG.keycloak_url();
         let realm_id = CONFIG.keycloak_realm();
@@ -144,7 +143,7 @@ impl Keycloak {
             .send()
             .await?;
 
-        let user = res.json::<serde_json::Value>().await?;
+        let user = res.json::<KeycloakUser>().await?;
         Ok(user)
     }
 
@@ -209,12 +208,16 @@ impl Keycloak {
         let client_uuid = CONFIG.keycloak_client_uuid();
         let url = format!("{base_url}/admin/realms/{realm_id}/users/{user_id}/role-mappings/clients/{client_uuid}");
 
-        client
+        let res = client
             .post(&url)
             .bearer_auth(tokens.access_token())
             .json(&roles)
             .send()
             .await?;
+
+        if !res.status().is_success() {
+            bail!("Failed to grant user roles: {}", res.text().await?)
+        }
 
         Ok(())
     }
@@ -230,12 +233,16 @@ impl Keycloak {
         let client_uuid = CONFIG.keycloak_client_uuid();
         let url = format!("{base_url}/admin/realms/{realm_id}/users/{user_id}/role-mappings/clients/{client_uuid}");
 
-        client
+        let res = client
             .delete(&url)
             .bearer_auth(tokens.access_token())
             .json(&roles)
             .send()
             .await?;
+
+        if !res.status().is_success() {
+            bail!("Failed to revoke user roles: {}", res.text().await?)
+        }
 
         Ok(())
     }
@@ -286,7 +293,7 @@ impl Keycloak {
         Ok(role)
     }
 
-    pub async fn create_client_role(role: &CreateRole, tokens: &JwtTokens) -> Result<()> {
+    pub async fn create_client_role(tokens: &JwtTokens, role: &CreateRole) -> Result<()> {
         let client = reqwest::Client::new();
         let base_url = CONFIG.keycloak_url();
         let realm_id = CONFIG.keycloak_realm();

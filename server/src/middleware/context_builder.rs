@@ -11,7 +11,7 @@ use crate::{
     models::Slugs,
     responses::HttpResponse,
     server::AppState,
-    utils::{config::Config, context_data::UserData, extractor::Extractor},
+    utils::{context_data::UserData, extractor::Extractor}, CONFIG,
 };
 
 pub async fn context_builder(
@@ -24,15 +24,23 @@ pub async fn context_builder(
         return HttpResponse::InternalServerError().finish();
     };
 
-    let config = Config::default();
     let user_data = UserData::from_claims(&claims);
-    let env = config.rust_env();
+    let env = CONFIG.rust_env();
 
     let db = app_data.conn.to_owned();
-    let projects = match db.projects().all(&user_data).await {
-        Ok(projects) => projects,
-        Err(_) => Vec::new(),
-    };
+    let projects = if claims.is_admin() {
+        match db.projects().all().await {
+            Ok(projects) => projects,
+            Err(_) => Vec::new(),
+        }
+    } else {
+        let id = claims.sub();
+        let roles = claims.roles();
+        match db.projects().all_with_permission(&id, roles).await {
+            Ok(projects) => projects,
+            Err(_) => Vec::new(),
+        }
+    } ;
 
     let active_project = Extractor::active_project(path.project_id(), &projects);
 

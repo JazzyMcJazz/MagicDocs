@@ -93,16 +93,16 @@ impl<'a> DocumentRepo<'a> {
         Ok(res)
     }
 
-    pub async fn find_by_version_id(
+    pub async fn find_by_id_and_version(
         &self,
-        id: i32,
         project_id: i32,
         project_version: i32,
+        document_id: i32,
     ) -> Result<Option<Model>> {
         let res = Entity::find()
             .column(document_version::Column::Id)
             .join(JoinType::InnerJoin, Relation::DocumentVersion.def())
-            .filter(document_version::Column::Id.eq(id))
+            .filter(document_version::Column::Id.eq(document_id))
             .filter(document_version::Column::ProjectVersionProjectId.eq(project_id))
             .filter(document_version::Column::ProjectVersionVersion.eq(project_version))
             .one(self.0)
@@ -132,12 +132,7 @@ impl<'a> DocumentRepo<'a> {
         Ok(res)
     }
 
-    pub async fn create(
-        &self,
-        project_id: i32,
-        name: String,
-        content: String,
-    ) -> Result<(i32, i32)> {
+    pub async fn create(&self, project_id: i32, name: &str, content: &str) -> Result<(i32, i32)> {
         let project_version = self.0.projects_versions().find_latest(project_id).await?;
 
         let tnx = self.0.begin().await?;
@@ -169,8 +164,8 @@ impl<'a> DocumentRepo<'a> {
         }
 
         let model = ActiveModel {
-            name: Set(name),
-            content: Set(content),
+            name: Set(name.to_owned()),
+            content: Set(content.to_owned()),
             ..Default::default()
         };
 
@@ -383,7 +378,7 @@ impl<'a> DocumentRepo<'a> {
     /// 3. If the document has only one version, delete the document (will cascade delete the document_version row)
     pub async fn delete(
         &self,
-        version_id: i32,
+        document_version: i32,
         project_id: i32,
         version: i32,
     ) -> Result<Option<i32>> {
@@ -396,7 +391,7 @@ impl<'a> DocumentRepo<'a> {
             bail!("Project version not found")
         };
 
-        // 1.
+        // 1.Project version is finalized
         if project_version.finalized {
             let tnx = self.0.begin().await?;
 
@@ -412,41 +407,42 @@ impl<'a> DocumentRepo<'a> {
 
             self.0
                 .documents_versions()
-                .bump_project_version(project_id, version, vec![version_id], &tnx)
+                .bump_project_version(project_id, version, vec![document_version], &tnx)
                 .await?;
 
             tnx.commit().await?;
             return Ok(Some(new_version));
         }
 
-        let Some(document) = self
+        let Some(doc_v) = self
             .0
             .documents_versions()
-            .find_by_pks(version_id, project_id, version)
+            .find_by_pks(document_version, project_id, version)
             .await?
         else {
             bail!("Document version not found")
         };
 
-        // 2.
+        // 2. Document has multiple versions
         let document_versions = self
             .0
             .documents_versions()
-            .find_by_doc_id(document.id)
+            .find_by_doc_id(doc_v.document_id)
             .await?;
+
         if document_versions.is_empty() {
             bail!("Document not found");
         } else if document_versions.len() > 1 {
             tracing::info!("Document has mutliple versions, deleting the latest document_version");
             self.0
                 .documents_versions()
-                .delete(version_id, project_id, version)
+                .delete(document_version, project_id, version)
                 .await?;
             return Ok(None);
         }
 
-        // 3.
-        let id = document_versions[0].id;
+        // 3. Document has only one version
+        let id = document_versions[0].document_id;
         tracing::info!("Document has only one version, deleting the document");
         let _ = Entity::delete_by_id(id).exec(self.0).await?;
 

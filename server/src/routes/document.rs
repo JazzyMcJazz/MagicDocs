@@ -11,7 +11,8 @@ use tokio::time::sleep;
 use crate::{
     database::Repo,
     models::{CreateDocumentForm, Slugs, StartCrawlerForm},
-    parsing::{HtmlParser, Markdown},
+    parsing::HtmlParser,
+    markdown::Markdown,
     responses::HttpResponse,
     server::AppState,
     utils::{
@@ -54,7 +55,7 @@ pub async fn create(
     };
 
     let Ok((document_id, project_version)) =
-        db.documents().create(id, form.name, form.content).await
+        db.documents().create(id, &form.name, &form.content).await
     else {
         return HttpResponse::InternalServerError().finish();
     };
@@ -151,7 +152,7 @@ pub async fn detail(
         Method::GET => {
             let Ok(document) = db
                 .documents()
-                .find_by_version_id(doc_id, project_id, version)
+                .find_by_id_and_version(project_id, version, doc_id)
                 .await
             else {
                 return HttpResponse::InternalServerError().finish();
@@ -161,7 +162,7 @@ pub async fn detail(
                 return HttpResponse::NotFound().finish();
             };
 
-            document.content = Markdown.to_html(&document.content);
+            document.content = Markdown::to_html(&document.content);
             context.insert("document", &document);
 
             tera.try_render("projects/documents/details.html", &context)
@@ -246,7 +247,7 @@ pub async fn editor(data: State<AppState>, Path(path): Path<Slugs>, req: Request
 
     let Ok(document) = db
         .documents()
-        .find_by_version_id(doc_id, project_id, version)
+        .find_by_id_and_version(project_id, version, doc_id)
         .await
     else {
         return HttpResponse::InternalServerError().finish();

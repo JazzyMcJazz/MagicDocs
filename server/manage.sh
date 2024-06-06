@@ -31,11 +31,11 @@ function start() {
         -e RUST_BACKTRACE=$RUST_BACKTRACE \
         -e DATABASE_URL=postgres://magicdocs:magicdocs@magicdocs-db:5432/magicdocs \
         -e KEYCLOAK_URL=$KEYCLOAK_URL \
-        -e KEYCLOAK_USER=$KEYCLOAK_USER \
-        -e KEYCLOAK_PASSWORD=$KEYCLOAK_PASSWORD \
         -e KEYCLOAK_REALM=$KEYCLOAK_REALM \
-        -e KEYCLOAK_CLIENT=$KEYCLOAK_CLIENT \
+        -e KEYCLOAK_CLIENT_NAME=$KEYCLOAK_CLIENT_NAME \
+        -e KEYCLOAK_CLIENT_UUID=$KEYCLOAK_CLIENT_UUID \
         -e KEYCLOAK_CLIENT_SECRET=$KEYCLOAK_CLIENT_SECRET \
+        -e OPENAI_API_KEY=$OPENAI_API_KEY \
         magicdocs:latest
 }
 
@@ -72,7 +72,7 @@ function install_tailwind() {
 }
 
 function run_tailwind() {
-    tailwind -i input.css -o static/css/styles.css --watch
+    tailwind -i style/tailwind.css -o style/output.css --watch
 }
 
 case $OP in

@@ -1,4 +1,5 @@
 use anyhow::Result;
+use entity::project;
 use serde::{Deserialize, Serialize};
 
 use super::{
@@ -95,13 +96,25 @@ impl OpenaiCompletionRequest {
     }
 }
 
-impl Default for OpenaiCompletionRequest {
-    fn default() -> Self {
+impl OpenaiCompletionRequest {
+    pub fn new(project: project::Model, version: i32) -> Self {
         let tools = vec![OpenaiTool::get(OpenaiToolName::SimilaritySearch)];
+
+        let system_prompt = SYSTEM_PROMPT
+            .replace("{{ name }}", &project.name)
+            .replace("{{ version }}", &version.to_string())
+            .replace(
+                "{{ description }}",
+                if project.description.is_empty() {
+                    "None"
+                } else {
+                    &project.description
+                },
+            );
 
         let messages = vec![OpenaiMessage {
             role: OpenaiMessageRole::System,
-            content: Some(SYSTEM_PROMPT.trim().to_owned()),
+            content: Some(system_prompt),
             tool_call_id: None,
             tool_calls: None,
         }];

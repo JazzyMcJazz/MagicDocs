@@ -44,28 +44,28 @@ form {
 	@apply contents;
 }
 
-form label {
+label {
 	@apply mt-2;
 }
 
-form input[type=text], input[type=number], form textarea {
+input[type=text], input[type=number], form textarea {
 	@apply bg-[#181818] text-white border-2 border-base rounded-sm focus:border-pink-500/50 focus:ring-0;
 }
 
-form input[disabled] {
+input[disabled] {
 	@apply bg-[#242424] text-gray-400;
 }
 
-form label.disabled {
+label.disabled {
 	@apply text-gray-400 hover:bg-inherit;
 }
 
-form input[type=checkbox] {
+input[type=checkbox] {
 	@apply bg-[#181818] text-pink-500/50 rounded-sm shadow-none;
 	@apply focus:ring-0 focus:ring-offset-0 border-2 w-5 h-5;
 }
 
-form input[type=checkbox]:disabled {
+input[type=checkbox]:disabled {
 	@apply bg-[#242424] text-gray-400;
 }
 
@@ -94,7 +94,7 @@ nav a {
 }
 
 .nav-user-menu-item {
-	@apply block px-4 py-2 hover:bg-neutral-200 text-black font-normal whitespace-nowrap cursor-pointer;
+	@apply block px-4 py-2 w-full text-left hover:bg-neutral-200 text-black font-normal whitespace-nowrap cursor-pointer;
 }
 
 .browser-sync-spinner {
@@ -108,31 +108,36 @@ nav a {
 
 /* Sidebar */
 #sidebar a {
-	@apply flex items-center px-3 py-3 text-gray-200 font-bold border-l-4 border-transparent hover:bg-[#191919];
+	@apply flex items-center px-3 py-2 text-gray-200 font-bold border-l-4 border-transparent hover:bg-[#191919];
 	@apply text-nowrap overflow-hidden;
 }
 
-#sidebar .active-project {
+#sidebar a[aria-current="page"] {
 	@apply border-pink-600/90 bg-[#282828] hover:bg-[#282828];
 }
 
-#document-nav li a {
-	@apply block p-4 text-white hover:bg-[#202020];
+#document-nav li {
+	@apply hover:bg-[#202020] overflow-x-hidden;
 }
 
-#document-nav li a.active {
+#document-nav li a {
+	@apply block px-4 py-2 text-white whitespace-nowrap;
+}
+
+#document-nav li a[aria-current="page"] {
 	@apply bg-[#282828] hover:bg-[#282828];
 }
 
 .tab {
 	@apply flex items-center h-full border-b-1 border-r-1 border-base hover:bg-[#282828];
+	@apply text-gray-200 font-bold flex justify-center items-center h-full px-4 min-w-32;
 }
 
 .tab a {
 	@apply text-gray-200 font-bold flex justify-center items-center h-full px-4 min-w-32;
 }
 
-.active-tab {
+#admin-nav a[aria-current="page"] {
 	@apply !border-b-0;
 	/* @apply bg-[#282828] hover:bg-[#282828]; */
 	@apply bg-gradient-to-t from-[#282828] to-[#101010];
@@ -189,6 +194,25 @@ nav a {
 }
 
 /* Codemirror Editor */
+#editor-wrapper {
+	@apply grid;
+}
+
+#editor-wrapper::after {
+	content: attr(data-replicated-value) " ";
+	@apply whitespace-pre-wrap invisible;
+}
+
+#editor-wrapper > textarea {
+	@apply resize-none overflow-hidden;
+}
+
+#editor-wrapper > textarea,
+#editor-wrapper::after {
+	@apply p-2 font-mono;
+	grid-area: 1 / 1 / 2 / 2;
+}
+
 .cm-editor {
 	@apply w-full p-4 min-h-48 text-white bg-[#181818] border-2 border-base;
 	@apply cursor-default;
@@ -254,7 +278,7 @@ nav a {
 }
 
 .message {
-	@apply mx-auto mt-8 w-[calc(100%-16px)] max-w-[700px];
+	@apply mx-auto my-4 w-[calc(100%-16px)] max-w-[50rem];
 }
 
 .message-header {
@@ -269,23 +293,32 @@ nav a {
 	@apply ml-5;
 }
 
+.message-body pre {
+	@apply !bg-gray-950;
+}
+
 /* Chat */
 #chat-messages h1, #chat-messages h2, #chat-messages h3, #chat-messages h4, #chat-messages h5, #chat-messages h6, #chat-messages p {
-	@apply my-2;
+	@apply my-5 text-[#ececec];
 }
 
 #chat-messages ol {
-	@apply my-2 list-decimal list-outside;
+	@apply my-5 list-decimal list-outside;
 }
 
 #chat-messages ul {
-	@apply my-2 list-disc list-outside;
+	@apply my-5 list-disc list-outside;
 }
 
 #chat-messages li {
-	@apply ml-4;
+	@apply pl-2;
 }
 
 #chat-messages pre {
-	@apply p-4 rounded-md overflow-x-auto;
+	@apply !bg-[#101010] p-4 rounded-md overflow-x-auto;
+}
+
+/* Modals */
+.modal-body {
+	@apply bg-[#101010] p-4 rounded-md;
 }

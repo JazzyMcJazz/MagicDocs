@@ -1,8 +1,13 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::claims::Claims;
 
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct AppData {
+    pub user: UserData,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct UserData {
     pub id: String,
     pub email: String,

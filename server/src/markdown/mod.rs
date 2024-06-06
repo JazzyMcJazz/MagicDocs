@@ -7,7 +7,7 @@ const CODE_BLOCK_THEME: &str = "base16-eighties.dark";
 pub struct Markdown;
 
 impl Markdown {
-    pub fn to_html(&self, markdown: &str) -> String {
+    pub fn to_html(markdown: &str) -> String {
         let adapter = SyntectAdapter::new(Some(CODE_BLOCK_THEME));
         let options = ComrakOptions::default();
         let mut plugins = ComrakPlugins::default();

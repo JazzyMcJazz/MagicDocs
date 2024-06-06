@@ -125,23 +125,23 @@ pub async fn update_user(
     for (project_id, role) in user_update.permissions.iter() {
         if let Some(val) = role.read {
             if val {
-                create_permissions.push((project_id, PermissionEnum::Read));
+                create_permissions.push((*project_id, PermissionEnum::Read));
             } else {
-                delete_permissions.push((project_id, PermissionEnum::Read));
+                delete_permissions.push((*project_id, PermissionEnum::Read));
             }
         }
         if let Some(val) = role.write {
             if val {
-                create_permissions.push((project_id, PermissionEnum::Create));
+                create_permissions.push((*project_id, PermissionEnum::Create));
             } else {
-                delete_permissions.push((project_id, PermissionEnum::Create));
+                delete_permissions.push((*project_id, PermissionEnum::Create));
             }
         }
         if let Some(val) = role.delete {
             if val {
-                create_permissions.push((project_id, PermissionEnum::Delete));
+                create_permissions.push((*project_id, PermissionEnum::Delete));
             } else {
-                delete_permissions.push((project_id, PermissionEnum::Delete));
+                delete_permissions.push((*project_id, PermissionEnum::Delete));
             }
         }
     }
@@ -212,7 +212,7 @@ pub async fn create_role(req: Request) -> impl IntoResponse {
         return HttpResponse::BadRequest().finish();
     }
 
-    match Keycloak::create_client_role(&role, &tokens).await {
+    match Keycloak::create_client_role(&tokens, &role).await {
         Ok(_) => (),
         Err(e) => {
             tracing::error!("Error creating role: {:?}", e);
@@ -300,23 +300,23 @@ pub async fn update_role_permissions(
     for (project_id, role) in permissions.data.iter() {
         if let Some(val) = role.read {
             if val {
-                create_permissions.push((project_id, PermissionEnum::Read));
+                create_permissions.push((*project_id, PermissionEnum::Read));
             } else {
-                delete_permissions.push((project_id, PermissionEnum::Read));
+                delete_permissions.push((*project_id, PermissionEnum::Read));
             }
         }
         if let Some(val) = role.write {
             if val {
-                create_permissions.push((project_id, PermissionEnum::Create));
+                create_permissions.push((*project_id, PermissionEnum::Create));
             } else {
-                delete_permissions.push((project_id, PermissionEnum::Create));
+                delete_permissions.push((*project_id, PermissionEnum::Create));
             }
         }
         if let Some(val) = role.delete {
             if val {
-                create_permissions.push((project_id, PermissionEnum::Delete));
+                create_permissions.push((*project_id, PermissionEnum::Delete));
             } else {
-                delete_permissions.push((project_id, PermissionEnum::Delete));
+                delete_permissions.push((*project_id, PermissionEnum::Delete));
             }
         }
     }

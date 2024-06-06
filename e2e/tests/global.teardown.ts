@@ -8,7 +8,7 @@ teardown.describe(() => {
         await page.goto('/');
         await page.click('#nav-user-menu-btn');
         const res = page.waitForResponse('**/logout');
-        await page.click('a[hx-post="/logout"]', { delay: 100 }); // wait for htmx
+        await page.click('input[value="Logout"]');
         await res;
     });
 });
@@ -20,7 +20,7 @@ teardown.describe(() => {
         await page.goto('/');
         await page.click('#nav-user-menu-btn');
         const res = page.waitForResponse('**/logout');
-        await page.click('a[hx-post="/logout"]', { delay: 100 }); // wait for htmx
+        await page.click('input[value="Logout"]');
         await res;
     });
 });
@@ -33,7 +33,7 @@ teardown.describe(() => {
         await page.goto('/');
         await page.click('#nav-user-menu-btn');
         const res = page.waitForResponse('**/logout');
-        await page.click('a[hx-post="/logout"]', { delay: 100 }); // wait for htmx
+        await page.click('input[value="Logout"]');
         await res;
     });
 });

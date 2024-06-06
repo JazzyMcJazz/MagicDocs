@@ -30,9 +30,9 @@ test.describe('admin', () => {
       await expect(projectTitle).toBeVisible();
 
       // Check that the project is visible in the sidebar
-      const sideBarItem = page.getByTitle(projectName);
+      const sideBarItem = page.getByRole('link', { name: projectName });
       await expect(sideBarItem).toBeVisible();
-      await expect(sideBarItem).toHaveClass(/active-project/);
+      await expect(sideBarItem).toHaveAttribute('aria-current', 'page');
    });
 
    test('can create a new document and get access', async ({ page }) => {
@@ -49,9 +49,9 @@ test.describe('admin', () => {
       await expect(input).toBeEditable();
       await input.click();
       await input.fill('Test Document');
-      const editor = page.locator('div[role="textbox"]');
+      const editor = page.getByLabel('Content');
       await expect(editor).toBeVisible();
-      await editor.pressSequentially('## This is a Test Document\n\n```js\nconsole.log("Hello World");\n```')
+      await editor.fill('## This is a Test Document\n\n```js\nconsole.log("Hello World");\n```')
       await page.getByRole('button', { name: 'Save' }).click();
 
       // Is redirected to the document page
